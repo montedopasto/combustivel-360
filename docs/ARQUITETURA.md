@@ -12,7 +12,7 @@ Referências oficiais: [HtmlOutput](https://developers.google.com/apps-script/re
 
 ## Identidade e perfis
 
-Os PINs são exclusivamente numéricos, com 8–12 dígitos. O servidor guarda salt aleatório, número de iterações e resultado PBKDF2-HMAC-SHA256 (210 000 iterações, 32 bytes). Um índice HMAC com pepper privado permite localizar o PIN sem fazer uma derivação para cada utilizador e impede dois utilizadores com o mesmo PIN. Comparações de hashes usam percurso de comprimento constante. O algoritmo foi comparado com a biblioteca crypto do Node, incluindo o fator completo de produção.
+Os PINs são exclusivamente numéricos, com 4–6 números. O servidor guarda salt aleatório, número de iterações e resultado PBKDF2-HMAC-SHA256 (210 000 iterações, 32 bytes). Um índice HMAC com pepper privado permite localizar o PIN sem fazer uma derivação para cada utilizador e impede dois utilizadores com o mesmo PIN. Comparações de hashes usam percurso de comprimento constante. O algoritmo foi comparado com a biblioteca crypto do Node, incluindo o fator completo de produção.
 
 O fator foi explicitamente escolhido para permitir execução no Apps Script; deve ser medido na conta de destino antes da entrada em serviço. Um PIN continua a ter entropia inferior a uma palavra-passe longa. O código limita a cinco tentativas por PIN e cem globais em dez minutos, com contadores nas propriedades privadas e exclusão mútua. A limitação global também pode bloquear temporariamente utilizadores legítimos durante abuso. Não existe proteção de rede contra consumo de quota por ataques públicos ao endpoint.
 

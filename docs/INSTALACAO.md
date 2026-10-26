@@ -55,7 +55,7 @@ Nenhuma credencial GitHub ou Google é necessária no JavaScript público. O URL
 Abrir o endereço Pages e selecionar **Primeira instalação**. Introduzir:
 
 1. O `BOOTSTRAP_TOKEN` obtido nas propriedades privadas.
-2. Nome e PIN individual do primeiro Administrador, com 8 a 12 algarismos.
+2. Nome e PIN individual do primeiro Administrador, com 4 a 6 números.
 3. Capacidades, stocks iniciais medidos e mínimos dos depósitos Trolho e Monte Ruivo.
 4. Custo inicial por litro apenas se for conhecido. Deixar vazio para marcar os custos como incompletos.
 

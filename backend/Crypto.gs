@@ -13,5 +13,5 @@ function pbkdf_(pin,salt,iterations) { const key=bytes_(pin); let u=hmac_(key,by
 function equal_(a,b) { a=String(a);b=String(b);let diff=a.length^b.length;for(let i=0;i<Math.max(a.length,b.length);i++)diff|=(a.charCodeAt(i)||0)^(b.charCodeAt(i)||0);return diff===0; }
 function random_() { return Utilities.getUuid().replace(/-/g,'')+Utilities.getUuid().replace(/-/g,''); }
 function indexPin_(pin) { return hex_(hmac_(bytes_(props_().getProperty('PIN_PEPPER')),bytes_(pin))); }
-function protectPin_(pin) { assert_(/^\d{8,12}$/.test(pin),'O PIN deve ter entre 8 e 12 algarismos.'); const salt=random_();return {salt,iterations:210000,hash:pbkdf_(pin,salt,210000),index:indexPin_(pin)}; }
+function protectPin_(pin) { assert_(/^\d{4,6}$/.test(pin),'O PIN deve ter entre 4 e 6 números.'); const salt=random_();return {salt,iterations:210000,hash:pbkdf_(pin,salt,210000),index:indexPin_(pin)}; }
 function checkPin_(pin,u) { return equal_(indexPin_(pin),u.pin.index) && equal_(pbkdf_(pin,u.pin.salt,u.pin.iterations),u.pin.hash); }

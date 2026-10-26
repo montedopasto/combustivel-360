@@ -14,7 +14,7 @@ export function harness(){
  ctx.instalar_();
  const at='2026-01-01T12:00:00.000Z';
  function user(id,role,pin){const salt='test-salt';const u={id,name:id,role,active:true,at,pin:{salt,iterations:2,hash:ctx.pbkdf_(pin,salt,2),index:ctx.indexPin_(pin)}};ctx.put_('UTILIZADORES',u);const token=crypto.randomBytes(32).toString('hex');cache.put('session:'+ctx.hex_(ctx.sha_(ctx.bytes_(token))),JSON.stringify({id,version:u.pin.hash,expires:Date.now()+3600000}));return token;}
- const tokens={worker:user('colaborador','Colaborador','12345678'),manager:user('responsavel','Responsável','23456789'),admin:user('administrador','Administrador','34567890')};
+ const tokens={worker:user('colaborador','Colaborador','123456'),manager:user('responsavel','Responsável','234567'),admin:user('administrador','Administrador','345678')};
  for(const id of ['trolho','monte-ruivo'])ctx.put_('DEPOSITOS',{id,name:id,capacityMl:1000000,initialMl:500000,minimumMl:100000,initialCostMicro:1500000,active:true,at});
  ctx.put_('VEICULOS',{id:'tractor',plate:'AA-00-AA',description:'Test fixture only',active:true,at});
  const call=(token,action,data={})=>ctx.dispatch_({...data,action,token});
