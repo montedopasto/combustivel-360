@@ -1,0 +1,9 @@
+export class Api {
+ constructor(url) { this.url=url; this.token=''; this.pending=new Map(); window.addEventListener('message',e=>{ if(!/^https:\/\/[a-zA-Z0-9-]+-script\.googleusercontent\.com$/.test(e.origin)&&e.origin!=='https://script.google.com'&&e.origin!=='https://script.googleusercontent.com')return;const d=e.data;if(!d||d.channel!=='combustivel360'||!this.pending.has(d.nonce))return;const p=this.pending.get(d.nonce);this.pending.delete(d.nonce);p.cleanup();if(d.result?.ok)p.resolve(d.result.data);else {const err=new Error(d.result?.error||'Resposta inválida.');err.definitive=d.result?.definitive===true;p.reject(err);} }); }
+ async call(action,data={}) {
+  if(!navigator.onLine)throw new Error('Sem ligação à Internet. O registo não foi enviado.');
+  if(!/^https:\/\/script\.google\.com\/macros\/s\/[A-Za-z0-9_-]+\/exec$/.test(this.url))throw new Error('A aplicação aguarda configuração pelo administrador.');
+  const nonce=Array.from(crypto.getRandomValues(new Uint8Array(24)),x=>x.toString(16).padStart(2,'0')).join('');
+  return new Promise((resolve,reject)=>{const frame=document.createElement('iframe');frame.name='c360_'+nonce;frame.hidden=true;frame.title='Operação segura';const form=document.createElement('form');form.method='POST';form.action=this.url;form.target=frame.name;form.hidden=true;const field=document.createElement('input');field.name='payload';field.value=JSON.stringify({...data,action,token:this.token,nonce});form.append(field);document.body.append(frame,form);let timeout;const cleanup=()=>{clearTimeout(timeout);frame.remove();form.remove();};this.pending.set(nonce,{resolve,reject,cleanup});timeout=setTimeout(()=>{this.pending.delete(nonce);cleanup();reject(new Error('Sem confirmação do servidor. Reenvie sem alterar os dados para confirmar a mesma operação.'));},120000);form.submit();field.value='';});
+ }
+}
