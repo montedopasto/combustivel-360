@@ -65,7 +65,7 @@ Adicionar matrículas reais e criar contas de Responsável e Colaborador. Defini
 
 ## 6. Agendamento
 
-Executar `instalarAcionadores_` no editor e autorizar. Cria:
+A rotina temporária de preparação acima já instala os acionadores. Para os reinstalar posteriormente, criar temporariamente uma função pública que invoque `instalarAcionadores_`, executá-la no editor e removê-la antes de qualquer publicação Web. Cria:
 
 - `verificarAlertas_`: de seis em seis horas.
 - `relatorioMensal_`: primeiro dia do mês, aproximadamente às 08:00 de Lisboa, dentro da janela de execução atribuída pelo Google.

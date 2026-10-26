@@ -1,6 +1,6 @@
 # Estado de validação e limites conhecidos
 
-Esta entrega contém código de aplicação e testes locais. Não equivale a certificação de produção nem confirma uma implantação que não ocorreu.
+O frontend e o backend estão publicados, a folha privada foi preparada e os dois acionadores foram instalados. A comunicação real POST/iframe/postMessage foi confirmada no navegador através da rejeição de um PIN inválido. A inicialização com o primeiro Administrador e os dados reais dos depósitos continua pendente. Ainda não equivale à aceitação operacional completa.
 
 ## Dependências de intervenção humana
 
@@ -9,7 +9,7 @@ Esta entrega contém código de aplicação e testes locais. Não equivale a cer
 - Introduzir os IDs/URL reais; guardar os segredos gerados no local privado adequado.
 - Fornecer o ficheiro original do logótipo oficial.
 - Introduzir capacidades, stocks, custo inicial se conhecido, utilizadores, matrículas e destinatários reais.
-- Instalar e validar os acionadores na conta proprietária.
+- Os acionadores já estão instalados; validar o envio com destinatários reais apenas depois da configuração.
 
 ## Testado localmente
 
@@ -19,7 +19,7 @@ O browser carregou a interface real, confirmou o ecrã de acesso e a navegação
 
 ## Ainda não validado em serviço real
 
-- Integração do POST/iframe/postMessage entre GitHub Pages e uma implantação Google real, incluindo Safari/iPhone e Android.
+- Compatibilidade do POST/iframe/postMessage em Safari/iPhone e Android físicos. A comunicação real já foi confirmada no navegador da instalação, com resposta do servidor a um PIN inválido.
 - Execução concorrente em processos Apps Script distintos. Localmente valida-se a exclusão e sequência protegida; o teste de duas sessões reais é obrigatório.
 - Latência do PIN no runtime Apps Script e comportamento sob carga/quotas.
 - Receção real de emails, janela dos acionadores e anexo PDF mensal.
