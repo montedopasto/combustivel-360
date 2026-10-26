@@ -2,7 +2,7 @@
 
 Aplicação de gestão de gasóleo agrícola: frontend HTML/CSS/JavaScript para GitHub Pages, Google Apps Script e Google Sheets privado. Interface PT-PT, industrial e mobile-first. Sem dependências de instalação para o frontend e sem serviços pagos obrigatórios.
 
-**Estado da entrega:** implementação e testes locais disponíveis; ainda não instalada no Google nem publicada. O URL da API e o logótipo estão vazios de propósito. A autorização Google, a configuração dos dados reais e a validação integrada descrita em `docs/ACEITACAO.md` são necessárias antes da utilização operacional. Não foram criados dados de produção nem enviados emails reais.
+**Estado da entrega:** código publicado no GitHub e frontend disponível em https://montedopasto.github.io/combustivel-360/. Testes e publicação passaram no GitHub Actions. O backend ainda não foi instalado no Google. O URL da API e o logótipo estão vazios de propósito. A autorização Google, a configuração dos dados reais e a validação integrada descrita em `docs/ACEITACAO.md` são necessárias antes da utilização operacional. Não foram criados dados de produção nem enviados emails reais.
 
 ## Começar
 
