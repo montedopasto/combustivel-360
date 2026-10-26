@@ -6,117 +6,117 @@ TAP version 13
 # Subtest: SHA256, HMAC and PBKDF2 match independent Node crypto vectors
 ok 1 - SHA256, HMAC and PBKDF2 match independent Node crypto vectors
   ---
-  duration_ms: 24.622083
+  duration_ms: 33.890291
   ...
 # Subtest: worker can log in and record an outgoing movement in correct tank
 ok 2 - worker can log in and record an outgoing movement in correct tank
   ---
-  duration_ms: 30.675375
+  duration_ms: 91.107
   ...
 # Subtest: worker catalog excludes administrative data and all admin endpoints deny access
 ok 3 - worker catalog excludes administrative data and all admin endpoints deny access
   ---
-  duration_ms: 2.124292
+  duration_ms: 2.754042
   ...
 # Subtest: two competing withdrawals cannot make balance negative and lock is always released
 ok 4 - two competing withdrawals cannot make balance negative and lock is always released
   ---
-  duration_ms: 2.04
+  duration_ms: 2.338833
   ...
 # Subtest: durable operation ID rejects payload changes and repeated request writes only once
 ok 5 - durable operation ID rejects payload changes and repeated request writes only once
   ---
-  duration_ms: 2.016708
+  duration_ms: 1.941583
   ...
 # Subtest: inbound quantities, capacity and price validations
 ok 6 - inbound quantities, capacity and price validations
   ---
-  duration_ms: 2.396417
+  duration_ms: 2.580167
   ...
 # Subtest: administrator correction adjusts delta, cancellation retains full ledger and prevents double reversal
 ok 7 - administrator correction adjusts delta, cancellation retains full ledger and prevents double reversal
   ---
-  duration_ms: 2.343541
+  duration_ms: 4.7075
   ...
 # Subtest: adjustment retains reason and rejects stale stock observations
 ok 8 - adjustment retains reason and rejects stale stock observations
   ---
-  duration_ms: 1.609375
+  duration_ms: 2.06325
   ...
 # Subtest: deactivated user and vehicle cannot create movements; plates are normalized
 ok 9 - deactivated user and vehicle cannot create movements; plates are normalized
   ---
-  duration_ms: 1.858
+  duration_ms: 2.370834
   ...
 # Subtest: step-up secret required, manager cannot edit users, and last admin retained
 ok 10 - step-up secret required, manager cannot edit users, and last admin retained
   ---
-  duration_ms: 1.656208
+  duration_ms: 2.495
   ...
 # Subtest: reports respect dates, plate, user, tank and type; cost weighted per tank
 ok 11 - reports respect dates, plate, user, tank and type; cost weighted per tank
   ---
-  duration_ms: 4.2925
+  duration_ms: 4.556791
   ...
 # Subtest: unknown opening cost is explicitly incomplete until the unknown stock is exhausted
 ok 12 - unknown opening cost is explicitly incomplete until the unknown stock is exhausted
   ---
-  duration_ms: 2.091833
+  duration_ms: 1.89725
   ...
 # Subtest: ledger committed before projection interruption can be reconciled without duplicate quantities
 ok 13 - ledger committed before projection interruption can be reconciled without duplicate quantities
   ---
-  duration_ms: 2.104375
+  duration_ms: 3.006875
   ...
 # Subtest: five-day lead time with configurable margin, preliminary confidence and no fabricated seasonality
 ok 14 - five-day lead time with configurable margin, preliminary confidence and no fabricated seasonality
   ---
-  duration_ms: 30.310584
+  duration_ms: 47.32725
   ...
 # Subtest: email alerts are suppressed until recovery and monthly reservation is idempotent
 ok 15 - email alerts are suppressed until recovery and monthly reservation is idempotent
   ---
-  duration_ms: 9.377417
+  duration_ms: 17.52425
   ...
 # Subtest: postMessage responses escape scripts, reject invalid nonce, and use configured exact origin
 ok 16 - postMessage responses escape scripts, reject invalid nonce, and use configured exact origin
   ---
-  duration_ms: 1.635708
+  duration_ms: 4.572334
   ...
 # Subtest: rate limiting persists outside evictable session cache
 ok 17 - rate limiting persists outside evictable session cache
   ---
-  duration_ms: 2.395167
+  duration_ms: 4.6815
   ...
 # Subtest: changing a PIN immediately invalidates previous sessions
 ok 18 - changing a PIN immediately invalidates previous sessions
   ---
-  duration_ms: 1.412041
+  duration_ms: 3.456834
   ...
 # Subtest: validation failures are definitive; unexpected infrastructure failures remain uncertain
 ok 19 - validation failures are definitive; unexpected infrastructure failures remain uncertain
   ---
-  duration_ms: 1.656
+  duration_ms: 6.27625
   ...
 # Subtest: full production PBKDF2 work factor matches independent implementation
 ok 20 - full production PBKDF2 work factor matches independent implementation
   ---
-  duration_ms: 2004.619833
+  duration_ms: 2649.644583
   ...
 # Subtest: POST form transport correlates nonce, validates origin and cleans up
 ok 21 - POST form transport correlates nonce, validates origin and cleans up
   ---
-  duration_ms: 1.717042
+  duration_ms: 2.561375
   ...
 # Subtest: server validation is definitive but ambiguous server error is retained as uncertain
 ok 22 - server validation is definitive but ambiguous server error is retained as uncertain
   ---
-  duration_ms: 0.363833
+  duration_ms: 0.330125
   ...
 # Subtest: offline client never submits and empty deployment configuration fails explicitly
 ok 23 - offline client never submits and empty deployment configuration fails explicitly
   ---
-  duration_ms: 0.09475
+  duration_ms: 0.091083
   ...
 1..23
 # tests 23
@@ -126,4 +126,4 @@ ok 23 - offline client never submits and empty deployment configuration fails ex
 # cancelled 0
 # skipped 0
 # todo 0
-# duration_ms 2185.625583
+# duration_ms 3299.270292

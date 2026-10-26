@@ -17,7 +17,7 @@ Em **Definições do projeto → Propriedades do script**, definir:
 
 Não colocar estas propriedades nem o conteúdo da folha em ficheiros públicos. O ID da folha, embora não seja uma palavra-passe, não é necessário no frontend.
 
-No editor, executar `instalar_` e autorizar os acessos pedidos. A função prepara as onze folhas e gera três segredos nas propriedades privadas:
+O editor não lista funções internas terminadas em `_`. Antes da primeira publicação, acrescentar temporariamente uma função pública `function prepararInstalacao(){ instalar_(); instalarAcionadores_(); }`, executá-la e autorizar os acessos pedidos. Remover essa função e guardar antes de publicar a aplicação Web. Nunca publicar a função temporária de instalação. A função prepara as onze folhas e gera três segredos nas propriedades privadas:
 
 - `BOOTSTRAP_TOKEN`: código de utilização única para o primeiro Administrador.
 - `PIN_PEPPER`: segredo de indexação dos PINs. Preservar em cópia privada; perdê-lo obriga a redefinir todos os PINs.
