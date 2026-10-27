@@ -17,11 +17,10 @@ Em **Definições do projeto → Propriedades do script**, definir:
 
 Não colocar estas propriedades nem o conteúdo da folha em ficheiros públicos. O ID da folha, embora não seja uma palavra-passe, não é necessário no frontend.
 
-O editor não lista funções internas terminadas em `_`. Antes da primeira publicação, acrescentar temporariamente uma função pública `function prepararInstalacao(){ instalar_(); instalarAcionadores_(); }`, executá-la e autorizar os acessos pedidos. Remover essa função e guardar antes de publicar a aplicação Web. Nunca publicar a função temporária de instalação. A função prepara as onze folhas e gera três segredos nas propriedades privadas:
+O editor não lista funções internas terminadas em `_`. Antes da primeira publicação, acrescentar temporariamente uma função pública `function prepararInstalacao(){ instalar_(); instalarAcionadores_(); }`, executá-la e autorizar os acessos pedidos. Remover essa função e guardar antes de publicar a aplicação Web. Nunca publicar a função temporária de instalação. A função prepara as onze folhas e gera dois segredos nas propriedades privadas:
 
 - `BOOTSTRAP_TOKEN`: código de utilização única para o primeiro Administrador.
 - `PIN_PEPPER`: segredo de indexação dos PINs. Preservar em cópia privada; perdê-lo obriga a redefinir todos os PINs.
-- `ADMIN_KEY`: segunda credencial para alterações administrativas sensíveis; guardar num gestor de palavras-passe e entregar apenas a Administradores autorizados. Não é o PIN de entrada.
 
 A instalação é idempotente e não apaga folhas existentes. Usar uma folha vazia: não migrar dados de outra estrutura por sobreposição. As funções terminadas em `_` são internas; executam-se no editor e não são expostas como chamadas de cliente.
 
@@ -59,7 +58,7 @@ Abrir o endereço Pages e selecionar **Primeira instalação**. Introduzir:
 3. Capacidades, stocks iniciais medidos e mínimos dos depósitos Trolho e Monte Ruivo.
 4. Custo inicial por litro apenas se for conhecido. Deixar vazio para marcar os custos como incompletos.
 
-O servidor invalida o código de inicialização depois de criar a conta. Não existem PINs predefinidos. Entrar com o PIN criado. Usar a `ADMIN_KEY` nas alterações administrativas.
+O servidor invalida o código de inicialização depois de criar a conta. Não existem PINs predefinidos. Entrar com o PIN criado. As alterações administrativas são autorizadas pela sessão do Administrador, sem chave adicional.
 
 Adicionar matrículas reais e criar contas de Responsável e Colaborador. Definir os destinatários reais nas Configurações. A margem adicional de segurança começa em dois dias e pode ser ajustada; o prazo de entrega mantém-se em cinco dias.
 
@@ -86,5 +85,4 @@ Para testar o frontend a partir de localhost com backend real, usar uma implemen
 - Se um envio ficar sem confirmação, usar **Confirmar resultado do envio**. O mesmo identificador é preservado durante a sessão do separador, incluindo recarregamentos. Não criar um segundo abastecimento para substituir um envio incerto. Se o separador for fechado ou os dados locais forem apagados, o Responsável deve verificar o histórico antes de repetir.
 - Alertas em `A_ENVIAR` ou `INCERTO` exigem confirmar a caixa de correio e as execuções Google. Não há reenvio automático ambíguo; isto evita duplicados, mas pode exigir recuperação manual de um email não entregue.
 - Alterar um PIN invalida sessões anteriores. Desativar um utilizador impede novas operações imediatamente.
-- Para rodar `ADMIN_KEY`, substituir a propriedade por um segredo aleatório forte num gestor de palavras-passe e redistribuir de forma privada. Nunca publicar a chave.
 - Manter a conta proprietária com autenticação multifator. Apenas pessoas de confiança devem poder editar o Apps Script e a folha.

@@ -11,7 +11,7 @@ function rate_(key,max,seconds){const store=props_();const now=Date.now();let bu
 function login_(p){return lock_(()=>{rate_('global',100,600);rate_(hex_(sha_(bytes_(String(p.pin||'')))).slice(0,20),5,600);const pin=text_(p.pin,6);assert_(/^\d{4,6}$/.test(pin),'O PIN deve ter entre 4 e 6 números.');const u=rows_('UTILIZADORES').find(x=>x.active&&equal_(x.pin.index,indexPin_(pin)));assert_(u&&checkPin_(pin,u),'PIN inválido ou utilizador inativo.');const token=random_();CacheService.getScriptCache().put('session:'+hex_(sha_(bytes_(token))),JSON.stringify({id:u.id,version:u.pin.hash,expires:Date.now()+3600000}),3600);return {token,user:{id:u.id,name:u.name,role:u.role},expires:Date.now()+3600000};});}
 function session_(token){assert_(typeof token==='string'&&/^[a-f0-9]{64}$/.test(token),'Sessão inválida. Entre novamente.');const s=CacheService.getScriptCache().get('session:'+hex_(sha_(bytes_(token))));assert_(s,'Sessão expirada. Entre novamente.');const auth=JSON.parse(s);const u=rows_('UTILIZADORES').find(x=>x.id===auth.id&&x.active);assert_(u&&equal_(auth.version,u.pin.hash)&&auth.expires>Date.now(),'Sessão expirada ou utilizador desativado.');return u;}
 function manage_(u){assert_(['Administrador','Responsável'].includes(u.role),'Acesso não autorizado.');}
-function admin_(u,p){assert_(u.role==='Administrador','Acesso não autorizado.');rate_('admin:'+u.id,10,600);assert_(p.adminKey&&equal_(p.adminKey,props_().getProperty('ADMIN_KEY')),'Chave administrativa inválida.');}
+function admin_(u){assert_(u.role==='Administrador','Acesso não autorizado.');rate_('admin:'+u.id,10,600);}
 function publicUser_(u){return {id:u.id,name:u.name,role:u.role,active:u.active,at:u.at};}
 function dispatch_(p){
  assert_(p&&typeof p==='object','Pedido inválido.');

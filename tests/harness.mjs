@@ -2,7 +2,7 @@ import vm from 'node:vm';
 import fs from 'node:fs';
 import crypto from 'node:crypto';
 export function harness(){
- const state={sheets:{},properties:{SPREADSHEET_ID:'TEST-ONLY',PIN_PEPPER:'test-pepper',ADMIN_KEY:'private-test-key',PAGES_ORIGIN:'https://test.invalid'},cache:new Map(),locked:false,mail:[],acquisitions:0,flushFail:false};
+ const state={sheets:{},properties:{SPREADSHEET_ID:'TEST-ONLY',PIN_PEPPER:'test-pepper',PAGES_ORIGIN:'https://test.invalid'},cache:new Map(),locked:false,mail:[],acquisitions:0,flushFail:false};
  class Sheet{constructor(name){this.name=name;this.data=[];}getLastRow(){return this.data.length;}appendRow(row){this.data.push(row);return this;}setFrozenRows(){return this;}getRange(row,col,n=1,width=1){return {getValues:()=>Array.from({length:n},(_,i)=>Array.from({length:width},(_,j)=>this.data[row-1+i]?.[col-1+j]??'')),setValues:values=>{values.forEach((r,i)=>{this.data[row-1+i]??=[];r.forEach((v,j)=>this.data[row-1+i][col-1+j]=v);});return this;},setFontWeight(){return this;},setBackground(){return this;},setFontColor(){return this;}};}}
  const db={getSheetByName:n=>state.sheets[n],insertSheet:n=>(state.sheets[n]=new Sheet(n)),setSpreadsheetTimeZone:()=>{}};
  const property={getProperty:k=>state.properties[k]||null,setProperty:(k,v)=>{state.properties[k]=v;return property;},deleteProperty:k=>delete state.properties[k]};

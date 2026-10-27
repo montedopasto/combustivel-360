@@ -11,7 +11,7 @@ Executar na implantação de homologação, com uma folha separada da produção
 | Reenvio não duplica | Mesmo ID repetido; mudança de payload rejeitada | Cortar a resposta de rede depois do envio e confirmar a operação pendente |
 | Entrada aumenta stock | Quantidade e custo verificados | Registar entrega real de homologação e comparar saldo |
 | Capacidade não excedida | Entrada excessiva rejeitada | Verificar mensagem da interface e ausência de movimento |
-| Correção ajusta saldo | Diferença líquida, custo e conservação do original | Corrigir quantidade/preço com chave administrativa e observar relatório |
+| Correção ajusta saldo | Diferença líquida, custo e conservação do original | Corrigir quantidade/preço com sessão de Administrador e observar relatório |
 | Anulação preserva histórico | Original + correção/anulação continuam; segundo estorno rejeitado | Confirmar linhas MOVIMENTOS/CORRECOES e stock após anulação |
 | Acerto conserva motivo | Justificação e rejeição de stock desatualizado | Registar medição e confirmar histórico e exportação |
 | Matrícula desativada indisponível | Catálogo e servidor rejeitam; duplicados normalizados | Desativar enquanto há formulário aberto e tentar enviar |
@@ -23,7 +23,7 @@ Executar na implantação de homologação, com uma folha separada da produção
 
 ## Autenticação e arranque
 
-Confirmar criação do primeiro Administrador com código privado e impossibilidade de repetir bootstrap. Confirmar PINs únicos, tentativas limitadas, expiração, desativação, invalidação após alteração de PIN e exigência da segunda credencial. Verificar que não há matrículas/utilizadores demonstrativos na folha de produção.
+Confirmar criação do primeiro Administrador com código privado e impossibilidade de repetir bootstrap. Confirmar PINs únicos, tentativas limitadas, expiração, desativação, invalidação após alteração de PIN e operações administrativas sem chave adicional, vedadas aos outros perfis. Verificar que não há matrículas/utilizadores demonstrativos na folha de produção.
 
 ## Integração de transporte
 

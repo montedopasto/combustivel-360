@@ -16,7 +16,7 @@ Os PINs são exclusivamente numéricos, com 4–6 números. O servidor guarda sa
 
 O fator foi explicitamente escolhido para permitir execução no Apps Script; deve ser medido na conta de destino antes da entrada em serviço. Um PIN continua a ter entropia inferior a uma palavra-passe longa. O código limita a cinco tentativas por PIN e cem globais em dez minutos, com contadores nas propriedades privadas e exclusão mútua. A limitação global também pode bloquear temporariamente utilizadores legítimos durante abuso. Não existe proteção de rede contra consumo de quota por ataques públicos ao endpoint.
 
-Sessões: identificador aleatório, apenas em memória do frontend; no Google Cache fica apenas a chave com SHA256 do identificador. Expiração absoluta de uma hora; o Google pode expulsar o cache mais cedo. Cada pedido reconsulta utilizador ativo e versão de PIN. As operações de escrita repetem esta verificação após obter o bloqueio. Alterações sensíveis exigem ainda `ADMIN_KEY`, guardada exclusivamente nas propriedades privadas e introduzida em cada alteração. Esta é uma segunda credencial, não TOTP nem MFA independente.
+Sessões: identificador aleatório, apenas em memória do frontend; no Google Cache fica apenas a chave com SHA256 do identificador. Expiração absoluta de uma hora; o Google pode expulsar o cache mais cedo. Cada pedido reconsulta utilizador ativo e versão de PIN. As operações de escrita repetem esta verificação após obter o bloqueio. As alterações administrativas exigem uma sessão válida do perfil Administrador, com permissões verificadas no servidor e limitação de pedidos. Não é exigida uma chave adicional ao PIN.
 
 | Operação | Colaborador | Responsável | Administrador |
 |---|---|---|---|

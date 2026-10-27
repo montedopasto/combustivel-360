@@ -18,7 +18,7 @@ Repositório dedicado: https://github.com/montedopasto/combustivel-360. Nenhum o
 ## O que está incluído
 
 - PIN individual de 4–6 números, PBKDF2-HMAC-SHA256 com salt, 210 000 iterações e índice HMAC com pepper privado; sessões de uma hora e limitação persistente de tentativas.
-- Administrador, Responsável e Colaborador, com permissões no servidor e segunda credencial administrativa nas alterações sensíveis.
+- Administrador, Responsável e Colaborador, com permissões no servidor e operações administrativas autorizadas pela sessão do perfil Administrador.
 - Trolho e Monte Ruivo, limites de capacidade, stock inicial, mínimo e custo inicial opcional.
 - Abastecimentos, entradas, acertos físicos, correções de quantidade/preço e anulações com justificação.
 - `LockService`, identificadores de operação persistidos no livro de movimentos, recuperação de reenvio e reconciliação de projeções.
