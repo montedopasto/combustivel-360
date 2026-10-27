@@ -51,7 +51,7 @@ Nenhuma credencial GitHub ou Google é necessária no JavaScript público. O URL
 
 ## 5. Inicialização da aplicação
 
-Abrir o endereço Pages e selecionar **Primeira instalação**. Introduzir:
+Apenas numa instalação nova, abrir o endereço Pages com `?instalar=1` no final. O ecrã normal de entrada não apresenta botão de instalação. O servidor impede repetir a inicialização depois de criada a primeira conta. Introduzir:
 
 1. O `BOOTSTRAP_TOKEN` obtido nas propriedades privadas.
 2. Nome e PIN individual do primeiro Administrador, com 4 a 6 números.
