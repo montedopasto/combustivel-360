@@ -2,7 +2,8 @@
 export const plateKey = value => String(value).toUpperCase().replace(/[^A-Z0-9]/g, '');
 export function plateCandidates(text, vehicles) {
   const lines=String(text).toUpperCase().split(/\r?\n/).map(plateKey);
-  return vehicles.filter(v=>{const key=plateKey(v.plate);return key.length>=4&&lines.some(line=>line.includes(key));});
+  const known=vehicles.filter(v=>{const key=plateKey(v.plate);return key.length>=4&&lines.some(line=>line.includes(key));});if(known.length)return known;
+  return [...new Set(lines.filter(line=>/^[A-Z0-9]{4,12}$/.test(line)&&/[A-Z]/.test(line)&&/[0-9]/.test(line)))].map(plate=>({plate}));
 }
 export function litreCandidates(text) {
   const found=new Set();
@@ -40,7 +41,7 @@ export function attachPhotos(form,vehicles){
   let busy=false,used=false,closed=false,controller;
   const confirm=form.querySelector('[data-photo-confirm]'),review=form.querySelector('[data-photo-review]');
   const reset=()=>{if(used)confirm.checked=false;};
-  form.querySelector('[name="plate"]').addEventListener('input',reset);form.querySelector('[name="litres"]').addEventListener('input',reset);form.querySelector('[name="tankId"]').addEventListener('change',reset);
+  form.querySelector('[name="plate"]').addEventListener('input',reset);form.querySelector('[name="litres"]').addEventListener('input',reset);form.querySelector('[name="tankId"]').addEventListener('change',reset);form.querySelector('[name="vehicleIdentification"]')?.addEventListener('input',reset);form.querySelector('#noPlate')?.addEventListener('change',reset);
   form.addEventListener('submit',event=>{if(busy){event.preventDefault();event.stopImmediatePropagation();}},{capture:true});
   const observer=new MutationObserver(()=>{if(!form.isConnected){closed=true;controller?.abort();document.querySelector('[data-photo-dialog]')?.close();observer.disconnect();}});observer.observe(form.parentNode.parentNode,{childList:true,subtree:true});
   for(const input of form.querySelectorAll('[data-photo-kind]'))input.addEventListener('change',async()=>{
@@ -77,4 +78,4 @@ export function attachPhotos(form,vehicles){
   });
 }
 export const photoFields=()=>'<div class="photo-actions"><label class="photo-button">Fotografar matrícula<input type="file" accept="image/*" capture="environment" data-photo-kind="plate"></label><label class="photo-button">Fotografar contador<input type="file" accept="image/*" capture="environment" data-photo-kind="litres"></label></div><p class="hint">Fotografias opcionais, lidas neste dispositivo e descartadas. Fotografe só a matrícula ou os litros deste abastecimento. Também pode preencher manualmente.</p><p data-photo-status role="status" class="hint"></p>';
-export const photoReview=()=>'<label data-photo-review hidden class="photo-review"><input type="checkbox" data-photo-confirm> Confirmei o depósito, a matrícula e os litros do abastecimento.</label>';
+export const photoReview=()=>'<label data-photo-review hidden class="photo-review"><input type="checkbox" data-photo-confirm> Confirmei o depósito, a identificação do veículo e os litros do abastecimento.</label>';

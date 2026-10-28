@@ -60,3 +60,7 @@ Sinais por matrícula: quantidade superior à média dos últimos 30 abastecimen
 Acionadores executam análises sem abrir a aplicação. Um alerta enviado fica aberto e não é repetido para o mesmo nível até haver recuperação ou escalada para outro nível. A recuperação marca os alertas como resolvidos. O mensal usa uma chave única por ano/mês.
 
 Antes de enviar, grava-se uma reserva `A_ENVIAR`. Após envio, `ENVIADO`. Uma falha ambígua fica `INCERTO` e requer revisão; não se promete entrega exatamente uma vez, porque email e Sheets não partilham uma transação. Esta política privilegia impedir repetições automáticas. A saída normal da situação permite futuros alertas.
+
+### Identificação de veículos sem matrícula
+
+Uma saída aceita um veículo cadastrado, uma matrícula indicada livremente ou uma identificação textual de máquina sem matrícula. Os dois últimos modos não alteram o cadastro. Veículos explicitamente desativados não podem receber novas saídas. O livro conserva matrícula real (ou vazia), nome do veículo e ID estável derivado da identificação normalizada, sem inventar matrículas. A impressão anti-duplicação inclui os novos campos, mantendo compatibilidade com pedidos antigos onde esses campos não existem. Histórico, exportações, agrupamentos e opções dos filtros usam a identificação. As folhas existentes mantêm as colunas: a coluna de matrícula em ABASTECIMENTOS passa a mostrar a identificação quando não há matrícula, ficando a distinção explícita no JSON do movimento.

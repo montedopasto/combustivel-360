@@ -60,3 +60,5 @@ Consultar [ARQUITETURA.md](docs/ARQUITETURA.md), [ACEITACAO.md](docs/ACEITACAO.m
 ## Leitura por fotografia
 
 Matrícula e litros podem ser preenchidos a partir de fotografias processadas no dispositivo, sem anexos nem uploads. O colaborador revê e confirma os valores antes de registar. Consulte [Funcionamento e limites](docs/FOTOGRAFIAS.md). A precisão em contadores reais ainda exige validação no local.
+
+Os abastecimentos também aceitam veículos sem matrícula: o colaborador indica a identificação da máquina. O cadastro prévio deixou de ser obrigatório; os relatórios conservam a identificação introduzida.

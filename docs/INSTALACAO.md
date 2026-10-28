@@ -60,7 +60,7 @@ Apenas numa instalação nova, abrir o endereço Pages com `?instalar=1` no fina
 
 O servidor invalida o código de inicialização depois de criar a conta. Não existem PINs predefinidos. Entrar com o PIN criado. As alterações administrativas são autorizadas pela sessão do Administrador, sem chave adicional.
 
-Adicionar matrículas reais e criar contas de Responsável e Colaborador. Definir os destinatários reais nas Configurações. A margem adicional de segurança começa em dois dias e pode ser ajustada; o prazo de entrega mantém-se em cinco dias.
+Opcionalmente cadastrar veículos com matrícula ou máquinas identificadas pela descrição; o abastecimento não exige cadastro prévio. Criar contas de Responsável e Colaborador. Definir os destinatários reais nas Configurações. A margem adicional de segurança começa em dois dias e pode ser ajustada; o prazo de entrega mantém-se em cinco dias.
 
 ## 6. Agendamento
 
