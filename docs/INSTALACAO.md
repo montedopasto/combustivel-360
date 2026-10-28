@@ -4,7 +4,7 @@
 
 Criar uma folha de cálculo vazia na conta Google que será proprietária da aplicação. Guardar o seu ID real, obtido no endereço entre `/d/` e `/edit`. Não publicar a folha na Web nem partilhá-la com colaboradores da aplicação. O acesso deles será feito exclusivamente através do PIN.
 
-Em **Extensões → Apps Script**, criar o projeto associado ou usar um projeto independente da mesma conta. Copiar os ficheiros `Core.gs`, `Crypto.gs`, `Store.gs`, `Api.gs`, `Reports.gs` e `Automation.gs` para ficheiros com os mesmos nomes. Remover a função de exemplo `myFunction` se existir. Ativar a apresentação do manifesto em Definições do projeto e substituir `appsscript.json` pelo fornecido.
+Em **Extensões → Apps Script**, criar o projeto associado ou usar um projeto independente da mesma conta. Copiar os ficheiros `Core.gs`, `Crypto.gs`, `Store.gs`, `Api.gs`, `Reports.gs`, `Automation.gs` e `External.gs` para ficheiros com os mesmos nomes. Remover a função de exemplo `myFunction` se existir. Ativar a apresentação do manifesto em Definições do projeto e substituir `appsscript.json` pelo fornecido.
 
 ## 2. Propriedades privadas
 
@@ -17,7 +17,7 @@ Em **Definições do projeto → Propriedades do script**, definir:
 
 Não colocar estas propriedades nem o conteúdo da folha em ficheiros públicos. O ID da folha, embora não seja uma palavra-passe, não é necessário no frontend.
 
-O editor não lista funções internas terminadas em `_`. Antes da primeira publicação, acrescentar temporariamente uma função pública `function prepararInstalacao(){ instalar_(); instalarAcionadores_(); }`, executá-la e autorizar os acessos pedidos. Remover essa função e guardar antes de publicar a aplicação Web. Nunca publicar a função temporária de instalação. A função prepara as onze folhas e gera dois segredos nas propriedades privadas:
+O editor não lista funções internas terminadas em `_`. Antes da primeira publicação, acrescentar temporariamente uma função pública `function prepararInstalacao(){ instalar_(); instalarAcionadores_(); }`, executá-la e autorizar os acessos pedidos. Remover essa função e guardar antes de publicar a aplicação Web. Nunca publicar a função temporária de instalação. A função prepara as folhas da aplicação e gera dois segredos nas propriedades privadas:
 
 - `BOOTSTRAP_TOKEN`: código de utilização única para o primeiro Administrador.
 - `PIN_PEPPER`: segredo de indexação dos PINs. Preservar em cópia privada; perdê-lo obriga a redefinir todos os PINs.
@@ -86,3 +86,5 @@ Para testar o frontend a partir de localhost com backend real, usar uma implemen
 - Alertas em `A_ENVIAR` ou `INCERTO` exigem confirmar a caixa de correio e as execuções Google. Não há reenvio automático ambíguo; isto evita duplicados, mas pode exigir recuperação manual de um email não entregue.
 - Alterar um PIN invalida sessões anteriores. Desativar um utilizador impede novas operações imediatamente.
 - Manter a conta proprietária com autenticação multifator. Apenas pessoas de confiança devem poder editar o Apps Script e a folha.
+
+A atualização com abastecimentos externos requer também `External.gs`. A nova folha é criada automaticamente no primeiro registo; não repetir a inicialização de utilizadores/depósitos. Consulte [Abastecimentos externos](ABASTECIMENTOS-EXTERNOS.md).

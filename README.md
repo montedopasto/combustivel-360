@@ -62,3 +62,7 @@ Consultar [ARQUITETURA.md](docs/ARQUITETURA.md), [ACEITACAO.md](docs/ACEITACAO.m
 Matrícula e litros podem ser preenchidos a partir de fotografias processadas no dispositivo, sem anexos nem uploads. O colaborador revê e confirma os valores antes de registar. Consulte [Funcionamento e limites](docs/FOTOGRAFIAS.md). A precisão em contadores reais ainda exige validação no local.
 
 Os abastecimentos também aceitam veículos sem matrícula: o colaborador indica a identificação da máquina. O cadastro prévio deixou de ser obrigatório; os relatórios conservam a identificação introduzida.
+
+## Abastecimentos externos
+
+Os colaboradores podem registar a data da guia, veículo e litros de abastecimentos feitos em postos externos. A consulta do Responsável/Administrador permite detalhe por intervalo de datas e exportações Excel/PDF para conferir a fatura, sem alterar o stock dos depósitos. [Funcionamento, instalação e limites da leitura de guias manuscritas](docs/ABASTECIMENTOS-EXTERNOS.md).

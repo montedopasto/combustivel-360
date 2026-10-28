@@ -21,7 +21,11 @@ function dispatch_(p){
  if(p.action==='logout'){CacheService.getScriptCache().remove('session:'+hex_(sha_(bytes_(p.token))));return true;}
  if(p.action==='catalog')return {tanks:rows_('DEPOSITOS').filter(t=>t.active).map(t=>({id:t.id,name:t.name})),vehicles:rows_('VEICULOS').filter(v=>v.active).map(v=>({id:v.id,plate:v.plate,description:v.description}))};
  if(p.action==='movement')return movement_(u,p);
+ if(p.action==='externalRegister')return externalWrite_(p,false);
+ if(p.action==='externalCancel')return externalWrite_(p,true);
  manage_(u);
+ if(p.action==='externalReport')return externalReport_(p.filters);
+ if(p.action==='externalExport')return externalExport_(p.filters,p.format);
  if(p.action==='overview')return overview_(p.filters);
  if(p.action==='report')return report_(p.filters);
  if(p.action==='export')return export_(p.filters,p.format);
