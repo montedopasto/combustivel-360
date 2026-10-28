@@ -56,3 +56,7 @@ O segundo comando abre um servidor em `http://localhost:8080`. Sem um URL real d
 Os testes usam registos artificiais exclusivamente na memória do processo de teste. Nunca os importar para o Sheets de produção. As chamadas MailApp e SpreadsheetApp nos testes não acedem à conta Google.
 
 Consultar [ARQUITETURA.md](docs/ARQUITETURA.md), [ACEITACAO.md](docs/ACEITACAO.md) e [LIMITACOES.md](docs/LIMITACOES.md).
+
+## Leitura por fotografia
+
+Matrícula e litros podem ser preenchidos a partir de fotografias processadas no dispositivo, sem anexos nem uploads. O colaborador revê e confirma os valores antes de registar. Consulte [Funcionamento e limites](docs/FOTOGRAFIAS.md). A precisão em contadores reais ainda exige validação no local.
