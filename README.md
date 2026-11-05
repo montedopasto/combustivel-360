@@ -65,4 +65,4 @@ Os abastecimentos também aceitam veículos sem matrícula: o colaborador indica
 
 ## Abastecimentos externos
 
-Os colaboradores podem registar a data da guia, veículo e litros de abastecimentos feitos em postos externos. A consulta do Responsável/Administrador permite detalhe por intervalo de datas e exportações Excel/PDF para conferir a fatura, sem alterar o stock dos depósitos. [Funcionamento, instalação e limites da leitura de guias manuscritas](docs/ABASTECIMENTOS-EXTERNOS.md).
+Os colaboradores podem registar a data da guia e matrícula ou identificação do veículo de abastecimentos feitos em postos externos. A consulta do Responsável/Administrador permite detalhe por intervalo de datas e exportações Excel/PDF para conferir a fatura, sem alterar o stock dos depósitos. [Funcionamento, instalação e limites da leitura de guias manuscritas](docs/ABASTECIMENTOS-EXTERNOS.md).
