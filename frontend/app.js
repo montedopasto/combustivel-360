@@ -1,5 +1,5 @@
 import {Api} from './api.js';
-import {attachPhotos,photoFields,photoReview,receiptFields} from './photo-readings.js?v=externos2';
+import {attachPhotos,photoFields,photoReview,receiptFields} from './photo-readings.js?v=guia1';
 const $=s=>document.querySelector(s), C=window.C360_CONFIG, api=new Api(C.apiUrl);
 let externalData=null,externalFilters={start:todayMonth(),end:''};
 function todayMonth(){return new Intl.DateTimeFormat('sv-SE',{timeZone:'Europe/Lisbon'}).format(new Date()).slice(0,7)+'-01';}

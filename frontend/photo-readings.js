@@ -1,3 +1,5 @@
+import {readGuideLine} from './guia-ocr.js?v=guia1';
+
 // Photos remain in this page's memory. Only confirmed text/numbers reach the API.
 export const plateKey = value => String(value).toUpperCase().replace(/[^A-Z0-9]/g, '');
 export function plateCandidates(text, vehicles) {
@@ -19,6 +21,20 @@ export function litreCandidates(text) {
 export function dateCandidates(text){
  const out=new Set();for(const m of String(text).matchAll(/\b(?:(\d{4})[/.\-](\d{1,2})[/.\-](\d{1,2})|(\d{1,2})[/.\-](\d{1,2})[/.\-](\d{4}))\b/g)){const y=Number(m[1]||m[6]),month=Number(m[2]||m[5]),day=Number(m[3]||m[4]);const d=new Date(Date.UTC(y,month-1,day));if(y>=1900&&y<=2100&&d.getUTCFullYear()===y&&d.getUTCMonth()===month-1&&d.getUTCDate()===day)out.add(String(y)+'-'+String(month).padStart(2,'0')+'-'+String(day).padStart(2,'0'));}return [...out];
 }
+export function guideSuggestions(lines, kind, maxDate) {
+  const values = lines.flatMap(line => {
+    if (kind === 'date') {
+      const text = line.trim().replace(/^(20)[. ](\d{2})(?=[/.-])/, '$1$2');
+      if (!/^(?:\d{4}[/.-]\d{1,2}[/.-]\d{1,2}|\d{1,2}[/.-]\d{1,2}[/.-]\d{4})$/.test(text)) return [];
+      return dateCandidates(text).filter(value => !maxDate || value <= maxDate);
+    }
+    const plate = plateKey(line);
+    if (!/^(?:[A-Z]{2}\d{4}|\d{4}[A-Z]{2}|\d{2}[A-Z]{2}\d{2}|[A-Z]{2}\d{2}[A-Z]{2})$/.test(plate)) return [];
+    return [plate.match(/../g).join('-')];
+  });
+  return [...new Set(values)];
+}
+
 let engine;
 function loadEngine(){
   if(window.Tesseract)return Promise.resolve(window.Tesseract);
@@ -54,7 +70,7 @@ export function attachPhotos(form,vehicles){
     const status=form.querySelector('[data-photo-status]');
     if(!file.type.startsWith('image/')||file.size>25*1024*1024){status.textContent='Escolha uma imagem até 25 MB. Pode preencher os valores manualmente.';return;}
     busy=true;form.querySelector('button[type="submit"]').disabled=true;
-    const dialog=document.createElement('dialog');dialog.dataset.photoDialog='';dialog.className='photo-dialog';dialog.innerHTML='<h2>'+(receipt?'Ler guia de abastecimento':kind==='plate'?'Ler matrícula':'Ler litros do abastecimento')+'</h2><p>'+(receipt?'Arraste sobre a data ou a matrícula e escolha o campo a ler. Repita na mesma foto. Manuscritos podem exigir preenchimento manual.':'Enquadre apenas '+(kind==='plate'?'a matrícula':'os números dos litros, incluindo a vírgula')+'. Arraste sobre a imagem para selecionar essa zona.')+'</p><canvas aria-label="Fotografia: arraste para selecionar a zona de leitura"></canvas><p data-progress role="status"></p><div data-proposal hidden><label>Leitura proposta — compare com a guia e corrija se necessário<input data-proposed></label><button type="button" data-use>UTILIZAR VALOR CONFIRMADO</button></div><div class="row">'+(receipt?'<button type="button" data-date>LER DATA</button><button type="button" data-plate>LER MATRÍCULA</button>':'<button type="button" data-read>LER ZONA SELECIONADA</button>')+'<button type="button" data-all>Imagem inteira</button><button type="button" data-cancel>'+(receipt?'Concluir':'Cancelar')+'</button></div>';
+    const dialog=document.createElement('dialog');dialog.dataset.photoDialog='';dialog.className='photo-dialog';dialog.innerHTML='<h2>'+(receipt?'Ler guia de abastecimento':kind==='plate'?'Ler matrícula':'Ler litros do abastecimento')+'</h2><p>'+(receipt?'Arraste um retângulo justo à volta de uma linha: a data ou a matrícula. Depois toque no botão desse campo. Confira o resultado e repita para a outra linha.':'Enquadre apenas '+(kind==='plate'?'a matrícula':'os números dos litros, incluindo a vírgula')+'. Arraste sobre a imagem para selecionar essa zona.')+'</p><canvas aria-label="Fotografia: arraste para selecionar a zona de leitura"></canvas><p data-progress role="status"></p><div data-proposal hidden><label>Leitura proposta — compare com a guia e corrija se necessário<input data-proposed></label><div data-alternatives class="row"></div><button type="button" data-use>UTILIZAR VALOR CONFIRMADO</button></div><div class="row">'+(receipt?'<button type="button" data-date>LER DATA</button><button type="button" data-plate>LER MATRÍCULA</button>':'<button type="button" data-read>LER ZONA SELECIONADA</button>')+'<button type="button" data-all>'+(receipt?'Limpar seleção':'Imagem inteira')+'</button><button type="button" data-cancel>'+(receipt?'Concluir':'Cancelar')+'</button></div>';
 
     const canvas=dialog.querySelector('canvas'),source=document.createElement('canvas'),ctx=canvas.getContext('2d');let region,start,working=false,bitmap,pendingKind;
     controller=new AbortController();const progress=message=>{dialog.querySelector('[data-progress]').textContent=message;};
@@ -67,19 +83,54 @@ export function attachPhotos(form,vehicles){
     const finish=()=>{controller?.abort();source.width=source.height=canvas.width=canvas.height=0;bitmap?.close();dialog.remove();busy=false;if(form.isConnected)form.querySelector('button[type="submit"]').disabled=!navigator.onLine;};
     dialog.addEventListener('close',finish,{once:true});
     const run=async(kind)=>{
-      if(working)return;pendingKind=null;dialog.querySelector('[data-proposal]').hidden=true;working=true;dialog.querySelectorAll('[data-read],[data-all],[data-date],[data-plate]').forEach(b=>b.disabled=true);
-      const crop=document.createElement('canvas'),r=region||{x:0,y:0,w:source.width,h:source.height};const scale=Math.min(3,Math.max(1,1200/r.w));crop.width=Math.round(r.w*scale);crop.height=Math.round(r.h*scale);crop.getContext('2d').drawImage(source,r.x,r.y,r.w,r.h,0,0,crop.width,crop.height);
+      if(working)return;
+      if(receipt&&!region){progress('Selecione apenas a linha que quer ler na fotografia.');return;}
+      if(receipt&&region.w<region.h*1.8){progress('Enquadre a linha completa, incluindo todos os caracteres.');return;}
+      pendingKind=null;dialog.querySelector('[data-proposal]').hidden=true;working=true;dialog.querySelectorAll('[data-read],[data-all],[data-date],[data-plate]').forEach(b=>b.disabled=true);
+      const crop=document.createElement('canvas'),r=region||{x:0,y:0,w:source.width,h:source.height};const scale=receipt?Math.min(2,1600/r.w):Math.min(3,Math.max(1,1200/r.w));crop.width=Math.round(r.w*scale);crop.height=Math.round(r.h*scale);crop.getContext('2d').drawImage(source,r.x,r.y,r.w,r.h,0,0,crop.width,crop.height);
       try{
+        if(receipt){
+          if(kind==='plate'&&form.querySelector('#noPlate')?.checked){progress('Veículo sem matrícula: preencha a identificação manualmente.');return;}
+          const proposed=dialog.querySelector('[data-proposed]');
+          const choices=dialog.querySelector('[data-alternatives]');
+          const maxDate=form.querySelector('[name="date"]').max;
+          progress('A ler a zona selecionada no dispositivo…');
+          let values=[];
+          try {
+            values=guideSuggestions(await readGuideLine(crop,kind,controller.signal),kind,maxDate);
+          } catch {
+            if(controller.signal.aborted)return;
+            const result=await readCanvas(crop,kind,progress,controller.signal);
+            if(result.data.confidence>=55)values=guideSuggestions(result.data.text.split(/\r?\n/),kind,maxDate);
+          }
+          if(closed||!dialog.open)return;
+          pendingKind=kind;
+          proposed.type=kind==='date'?'date':'text';
+          proposed.required=true;
+          proposed.max=kind==='date'?maxDate:'';
+          proposed.value=values.length===1?values[0]:'';
+          choices.replaceChildren();
+          for(const value of values.length>1?values:[]){
+            const button=document.createElement('button');
+            button.type='button';
+            button.textContent=kind==='date'?value.split('-').reverse().join('/'):value;
+            button.onclick=()=>{proposed.value=value;};
+            choices.append(button);
+          }
+          dialog.querySelector('[data-proposal]').hidden=false;
+          progress(values.length>1?'Compare as sugestões com a guia e escolha a correta.':values.length?'Confira o valor com a guia antes de o utilizar.':'Sem leitura válida. Ajuste a seleção, ou preencha o campo abaixo.');
+          return;
+        }
         const result=await readCanvas(crop,kind,progress,controller.signal);if(closed||!dialog.open)return;
         const candidates=kind==='plate'?plateCandidates(result.data.text,vehicles):kind==='date'?dateCandidates(result.data.text):litreCandidates(result.data.text);
         if(candidates.length!==1||(!Number.isFinite(result.data.confidence)||result.data.confidence<55)){progress(candidates.length>1?'Foram encontrados vários valores. Selecione apenas a zona correta e tente novamente, ou cancele e preencha manualmente.':'Não foi possível ler com segurança. Enquadre melhor ou preencha manualmente.');return;}
-        if(kind==='plate'&&form.querySelector('#noPlate')?.checked){progress('Veículo sem matrícula: preencha a identificação manualmente.');return;}if(receipt){pendingKind=kind;const proposed=dialog.querySelector('[data-proposed]');proposed.type=kind==='date'?'date':kind==='litres'?'number':'text';proposed.required=true;proposed.removeAttribute('min');proposed.removeAttribute('max');if(kind==='litres'){proposed.min='0.001';proposed.max='10000000';proposed.step='0.001';}if(kind==='date')proposed.max=form.querySelector('[name="date"]').max;proposed.value=kind==='plate'?candidates[0].plate:candidates[0];dialog.querySelector('[data-proposal]').hidden=false;progress('Leitura provisória. Confira a leitura com a guia antes de utilizar.');return;}const target=form.querySelector(kind==='plate'?'[name="plate"]':kind==='date'?'[name="date"]':'[name="litres"]');target.value=kind==='plate'?candidates[0].plate:candidates[0];target.dispatchEvent(new Event('input',{bubbles:true}));status.textContent=(kind==='plate'?'Matrícula preenchida.':kind==='date'?'Data preenchida.':'Litros preenchidos.')+' Verifique o valor antes de confirmar.';if(receipt){progress(status.textContent+' Pode selecionar outro campo ou concluir.');region=null;draw();}else dialog.close();
+        if(kind==='plate'&&form.querySelector('#noPlate')?.checked){progress('Veículo sem matrícula: preencha a identificação manualmente.');return;}const target=form.querySelector(kind==='plate'?'[name="plate"]':kind==='date'?'[name="date"]':'[name="litres"]');target.value=kind==='plate'?candidates[0].plate:candidates[0];target.dispatchEvent(new Event('input',{bubbles:true}));status.textContent=(kind==='plate'?'Matrícula preenchida.':kind==='date'?'Data preenchida.':'Litros preenchidos.')+' Verifique o valor antes de confirmar.';dialog.close();
       }catch(error){if(dialog.open)progress(error.message||'Não foi possível ler. Preencha manualmente.');}
       finally{crop.width=crop.height=0;working=false;if(dialog.isConnected){dialog.querySelectorAll('[data-read],[data-all],[data-date],[data-plate]').forEach(b=>b.disabled=false);}}
     };
     dialog.querySelector('[data-use]').onclick=()=>{if(!pendingKind)return;const proposed=dialog.querySelector('[data-proposed]');if(!proposed.reportValidity())return;const target=form.querySelector(pendingKind==='plate'?'[name="plate"]':pendingKind==='date'?'[name="date"]':'[name="litres"]');target.value=proposed.value;target.dispatchEvent(new Event('input',{bubbles:true}));status.textContent='Valor confirmado na guia. Reveja a data e a matrícula antes de registar.';progress('Valor preenchido. Pode selecionar outro campo ou concluir.');pendingKind=null;dialog.querySelector('[data-proposal]').hidden=true;region=null;draw();};
     if(!receipt)dialog.querySelector('[data-read]').onclick=()=>run(kind);if(receipt){dialog.querySelector('[data-date]').onclick=()=>run('date');dialog.querySelector('[data-plate]').onclick=()=>run('plate');}
-    try{bitmap=await createImageBitmap(file);file=null;if(closed){finish();return;}const scale=Math.min(1,1800/Math.max(bitmap.width,bitmap.height));canvas.width=source.width=Math.round(bitmap.width*scale);canvas.height=source.height=Math.round(bitmap.height*scale);source.getContext('2d').drawImage(bitmap,0,0,source.width,source.height);bitmap.close();bitmap=null;draw();document.body.append(dialog);dialog.showModal();status.textContent='';}
+    try{bitmap=await createImageBitmap(file);file=null;if(closed){finish();return;}const scale=Math.min(1,(receipt?4032:1800)/Math.max(bitmap.width,bitmap.height));canvas.width=source.width=Math.round(bitmap.width*scale);canvas.height=source.height=Math.round(bitmap.height*scale);source.getContext('2d').drawImage(bitmap,0,0,source.width,source.height);bitmap.close();bitmap=null;draw();document.body.append(dialog);dialog.showModal();status.textContent='';}
     catch{file=null;finish();status.textContent='Não foi possível abrir a imagem. Use JPEG/PNG ou preencha manualmente.';}
   });
 }
