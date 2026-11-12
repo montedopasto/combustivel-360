@@ -23,3 +23,31 @@ test('external reports keep historical quantities blank when they were never ent
   assert.equal(h.ctx.externalTable_(report)[1][2],'');
   assert.equal(h.ctx.externalTable_(report)[2][2],42.91);
 });
+
+test('admin edits a historical external record once, with audit history and original author', () => {
+  const h = harness();
+  const original = register(h);
+  const saved = h.ctx.externalRows_()[0];
+  delete saved.litresMl;
+  h.ctx.put_('ABASTECIMENTOS_EXTERNOS', saved);
+  const payload = {root:original.id, revision:original.id, date:'2024-01-16',
+    plate:'BB-22-CC', litres:42.91, operationId:h.crypto.randomUUID()};
+  assert.throws(() => h.call(h.tokens.worker,'externalEdit',payload),/autorizado/);
+  assert.throws(() => h.call(h.tokens.manager,'externalEdit',payload),/autorizado/);
+  h.call(h.tokens.admin,'externalEdit',payload);
+  h.call(h.tokens.admin,'externalEdit',payload);
+  assert.equal(h.ctx.externalRows_().length,2);
+  assert.equal(h.ctx.externalRows_()[0].litresMl,undefined);
+  assert.equal(h.ctx.externalRows_()[1].kind,'EDICAO');
+  assert.equal(h.ctx.externalRows_()[1].userId,'administrador');
+  const report=h.ctx.externalReport_({});
+  assert.equal(report.totalLitres,42.91);
+  assert.equal(report.count,1);
+  assert.equal(report.rows[0].id,original.id);
+  assert.equal(report.rows[0].userId,'colaborador');
+  assert.equal(report.rows[0].plate,'BB-22-CC');
+  assert.equal(report.rows[0].date,'2024-01-16');
+  assert.throws(()=>h.call(h.tokens.admin,'externalEdit',{...payload,operationId:h.crypto.randomUUID()}),/alterado/);
+  h.call(h.tokens.admin,'externalCancel',{root:original.id,reason:'Teste',operationId:h.crypto.randomUUID()});
+  assert.equal(h.ctx.externalReport_({}).count,0);
+});
