@@ -30,6 +30,7 @@ function dispatch_(p){
  if(p.action==='overview')return overview_(p.filters);
  if(p.action==='report')return report_(p.filters);
  if(p.action==='export')return export_(p.filters,p.format);
+ if(p.action==='vehicleLookup'){assert_(u.role==='Administrador','Acesso não autorizado.');return vehicleLookup_(p.plate);}
  if(p.action==='adminData'){assert_(u.role==='Administrador','Acesso não autorizado.');return {tanks:tanks_(),vehicles:rows_('VEICULOS'),users:rows_('UTILIZADORES').map(publicUser_),config:config_()};}
  if(p.action==='save')return save_(u,p);
  fail_('Operação desconhecida.');
@@ -45,6 +46,25 @@ function tankInput_(p,old){
  let initialCostMicro=old?old.initialCostMicro:null;if(!old&&p.initialCost!==''&&p.initialCost!=null){assert_(Number.isFinite(p.initialCost)&&p.initialCost>=0&&p.initialCost<100,'Preço inicial inválido.');initialCostMicro=Math.round(p.initialCost*1e6);}
  return {id:p.id,name:text_(p.name,120),capacityMl,minimumMl,initialMl,initialCostMicro,active:p.active!==false,at:old?old.at:new Date().toISOString()};
 }
+function vehicleLookup_(value){
+ const plate=plate_(value).replace(/-/g,'');
+ assert_(/^(?:[A-Z]{2}\d{4}|\d{4}[A-Z]{2}|\d{2}[A-Z]{2}\d{2}|[A-Z]{2}\d{2}[A-Z]{2})$/.test(plate),'Introduza uma matrícula portuguesa válida.');
+ const existing=rows_('VEICULOS').find(v=>plate_(v.plate).replace(/-/g,'')===plate&&v.brand&&v.model);
+ if(existing)return {brand:existing.brand,model:existing.model};
+ const response=UrlFetchApp.fetch('https://mycarplate.online/api/v1/vehicle?country=PT&plate='+encodeURIComponent(plate),
+  {headers:{Accept:'application/json'},muteHttpExceptions:true,followRedirects:false});
+ const status=response.getResponseCode();
+ if(status===404||status===422)fail_('A consulta não encontrou marca e modelo para esta matrícula.');
+ if(status===429)fail_('A consulta gratuita atingiu o limite. Volte a tentar mais tarde.');
+ assert_(status===200,'Serviço de consulta temporariamente indisponível.');
+ const result=JSON.parse(response.getContentText());
+ const vehicle=result.data;
+ assert_(result.success===true&&vehicle&&vehicle.country==='PT'&&plate_(vehicle.plate).replace(/-/g,'')===plate&&typeof vehicle.make==='string'&&typeof vehicle.model==='string','A consulta não devolveu dados válidos para esta matrícula.');
+ const brand=vehicle.make.trim().slice(0,60),model=vehicle.model.trim().slice(0,80);
+ assert_(brand&&model,'A consulta não devolveu marca e modelo para esta matrícula.');
+ return {brand,model};
+}
+
 function save_(u,p){return lock_(()=>{u=session_(p.token);admin_(u,p);const d=p.data||{};
  if(p.entity==='vehicle'){const vs=rows_('VEICULOS');const old=vs.find(v=>v.id===d.id);const plate=plate_(d.plate);const description=text_(d.description,120).replace(/\s+/g,' ');assert_(!plate||/^[A-Z0-9-]+$/.test(plate),'Matrícula inválida.');assert_(plate||description.length>=3,'Identificação obrigatória para veículos sem matrícula.');assert_(!vs.some(v=>v.id!==d.id&&(plate?plate_(v.plate).replace(/-/g,'')===plate.replace(/-/g,''):!v.plate&&String(v.description).toUpperCase()===description.toUpperCase())),'Veículo já existente.');const o={id:old?old.id:random_(),plate,description,brand:text_(d.brand??old?.brand,60),model:text_(d.model??old?.model,80),active:d.active!==false,at:old?old.at:new Date().toISOString()};put_('VEICULOS',o);return o;}
  if(p.entity==='user'){const us=rows_('UTILIZADORES');const old=us.find(x=>x.id===d.id);assert_(['Administrador','Responsável','Colaborador'].includes(d.role),'Perfil inválido.');assert_(text_(d.name,120),'Nome obrigatório.');if(old&&old.role==='Administrador'&&(d.role!=='Administrador'||d.active===false))assert_(us.some(x=>x.id!==old.id&&x.active&&x.role==='Administrador'),'Mantenha um administrador ativo.');let pin=old?old.pin:null;if(d.pin){assert_(!us.some(x=>x.id!==d.id&&equal_(x.pin.index,indexPin_(String(d.pin)))),'PIN já atribuído.');pin=protectPin_(String(d.pin));}assert_(pin,'PIN obrigatório.');const o={id:old?old.id:random_(),name:d.name,role:d.role,active:d.active!==false,pin,at:old?old.at:new Date().toISOString()};put_('UTILIZADORES',o);return publicUser_(o);}
