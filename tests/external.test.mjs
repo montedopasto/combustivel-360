@@ -51,3 +51,18 @@ test('admin edits a historical external record once, with audit history and orig
   h.call(h.tokens.admin,'externalCancel',{root:original.id,reason:'Teste',operationId:h.crypto.randomUUID()});
   assert.equal(h.ctx.externalReport_({}).count,0);
 });
+
+test('overview combines effective external fuel with internal consumption without changing stock or forecasts', () => {
+  const h=harness();
+  const today=h.ctx.dateKey_(new Date());
+  const before=h.ctx.overview_({});
+  register(h,{date:today,litres:42.91});
+  const cancelled=register(h,{date:today,litres:15});
+  h.call(h.tokens.admin,'externalCancel',{root:cancelled.id,reason:'Teste',operationId:h.crypto.randomUUID()});
+  const after=h.ctx.overview_({});
+  assert.equal(after.consumption.externalMonth,42.91);
+  assert.equal(after.consumption.month,before.consumption.month+42.91);
+  assert.equal(after.consumption.days.find(row=>row.key===today).external,42.91);
+  assert.equal(after.kpi.stock,before.kpi.stock);
+  assert.equal(JSON.stringify(after.forecasts),JSON.stringify(before.forecasts));
+});

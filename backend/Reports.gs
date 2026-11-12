@@ -10,7 +10,45 @@ function report_(filters){
  const totalCost=outs.some(m=>m.cost==null)?null:roundMoney_(sum(outs,m=>m.cost||0));
  return {title:'COMBUSTÍVEL 360 · Monte do Pasto',issuedAt:new Date().toISOString(),filters:filters||{},years:Object.entries(years).map(([year,litres])=>({year,litres})),comparison,summary:{litres:-sum(outs,m=>m.delta)/1000,count:outs.length,received:sum(ins,m=>m.delta)/1000,purchase:roundMoney_(sum(ins,m=>m.cost||0)),consumptionCost:totalCost},rows,history,stock,vehicles:groups('vehicle'),users:groups('userName'),tanks:groups('tankName'),months:Object.values(buckets).sort((a,b)=>a.month.localeCompare(b.month)),days:Object.entries(byDay).map(([day,litres])=>({day,litres})).sort((a,b)=>a.day.localeCompare(b.day))};
 }
-function overview_(filters){const tanks=tanks_(),ledger=rows_('MOVIMENTOS'),records=costed_(tanks,ledger),config=config_(),now=new Date();const forecasts=tanks.map(t=>forecast_(t,records,config,now));const report=report_(filters);const today=dateKey_(now),month=today.slice(0,7);const monthly=records.filter(m=>dateKey_(m.at).startsWith(month));return {tanks,forecasts,anomalies:anomalies_(records),report,catalog:{users:rows_('UTILIZADORES').map(publicUser_),vehicles:vehicleCatalogue_(ledger),tanks:rows_('DEPOSITOS').map(t=>({id:t.id,name:t.name}))},kpi:{stock:tanks.reduce((s,t)=>s+t.stockMl/1000,0),today:records.filter(m=>m.kind==='SAIDA'&&dateKey_(m.at)===today).reduce((s,m)=>s-m.delta/1000,0),month:monthly.filter(m=>m.kind==='SAIDA').reduce((s,m)=>s-m.delta/1000,0),received:monthly.filter(m=>m.kind==='ENTRADA').reduce((s,m)=>s+m.delta/1000,0),cost:monthly.some(m=>m.kind==='SAIDA'&&m.cost==null)?null:roundMoney_(monthly.filter(m=>m.kind==='SAIDA').reduce((s,m)=>s+(m.cost||0),0)),alerts:forecasts.filter(f=>f.state!=='NORMAL').length}};}
+function consumptionOverview_(records, external, today){
+ const days=new Map(), months=new Map(), vehicles=new Map();
+ const sources={internal:{today:0,month:0},external:{today:0,month:0,missingMonth:0}};
+ const month=today.slice(0,7);
+ function add(map,key,source,quantity,name=key){
+  const row=map.get(key)||{key,name,internal:0,external:0};
+  row[source]+=quantity;
+  map.set(key,row);
+ }
+ function addFuel(record, day, source, quantity){
+  if(day>today)return;
+  if(day===today)sources[source].today+=quantity;
+  if(day.startsWith(month))sources[source].month+=quantity;
+  add(days,day,source,quantity);
+  add(months,day.slice(0,7),source,quantity);
+  const vehicleKey=record.plate?'plate:'+plate_(record.plate).replace(/-/g,''):record.vehicleId||vehicleLabel_(record);
+  add(vehicles,vehicleKey,source,quantity,vehicleLabel_(record));
+ }
+ records.filter(row=>row.kind==='SAIDA').forEach(row=>addFuel(row,dateKey_(row.at),'internal',-row.delta));
+ for(const row of external.rows){
+  if(row.litresMl==null){
+   if(row.date<=today&&row.date.startsWith(month))sources.external.missingMonth++;
+  }else addFuel(row,row.date,'external',row.litresMl);
+ }
+ const litres=map=>Array.from(map.values(),row=>({...row,internal:row.internal/1000,external:row.external/1000,total:(row.internal+row.external)/1000}));
+ return {
+  today:(sources.internal.today+sources.external.today)/1000,
+  month:(sources.internal.month+sources.external.month)/1000,
+  internalMonth:sources.internal.month/1000,externalMonth:sources.external.month/1000,
+  missingMonth:sources.external.missingMonth,
+  days:litres(days).sort((a,b)=>a.key.localeCompare(b.key)),
+  months:litres(months).sort((a,b)=>a.key.localeCompare(b.key)),
+  vehicles:litres(vehicles).sort((a,b)=>b.total-a.total).slice(0,8),
+  externalChecks:external.rows.filter(row=>row.possibleDuplicate).slice(-20)
+   .map(row=>({date:row.date,vehicle:vehicleLabel_(row)}))
+ };
+}
+
+function overview_(filters){const tanks=tanks_(),ledger=rows_('MOVIMENTOS'),records=costed_(tanks,ledger),config=config_(),now=new Date();const forecasts=tanks.map(t=>forecast_(t,records,config,now));const report=report_(filters);const today=dateKey_(now),month=today.slice(0,7);const monthly=records.filter(m=>dateKey_(m.at).startsWith(month));const consumption=consumptionOverview_(records,externalReport_({}),today);return {tanks,forecasts,consumption,anomalies:anomalies_(records),report,catalog:{users:rows_('UTILIZADORES').map(publicUser_),vehicles:vehicleCatalogue_(ledger),tanks:rows_('DEPOSITOS').map(t=>({id:t.id,name:t.name}))},kpi:{stock:tanks.reduce((s,t)=>s+t.stockMl/1000,0),today:records.filter(m=>m.kind==='SAIDA'&&dateKey_(m.at)===today).reduce((s,m)=>s-m.delta/1000,0),month:monthly.filter(m=>m.kind==='SAIDA').reduce((s,m)=>s-m.delta/1000,0),received:monthly.filter(m=>m.kind==='ENTRADA').reduce((s,m)=>s+m.delta/1000,0),cost:monthly.some(m=>m.kind==='SAIDA'&&m.cost==null)?null:roundMoney_(monthly.filter(m=>m.kind==='SAIDA').reduce((s,m)=>s+(m.cost||0),0)),alerts:forecasts.filter(f=>f.state!=='NORMAL').length}};}
 function escape_(s){return String(s==null?'—':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
 function reportTable_(r){const header=['Data','Tipo','Depósito','Veículo / matrícula','Utilizador','Litros com sinal','Custo EUR'];return [header].concat(r.rows.map(m=>[m.deliveryDate||dateKey_(m.at),m.kind,m.tankName,vehicleLabel_(m),m.userName,m.delta/1000,m.cost==null?'Incompleto':m.cost]));}
 function reportHtml_(r,extra){const s=r.summary;return '<!doctype html><html lang="pt-PT"><head><meta charset="utf-8"><style>body{font:11px Arial;color:#17251e;margin:28px}h1{font-size:25px;border-bottom:4px solid #2b8159;padding-bottom:12px}h2{margin-top:26px}table{border-collapse:collapse;width:100%;font-size:9px}td,th{border-bottom:1px solid #ddd;padding:7px;text-align:left}th{background:#e8f1ea}p{line-height:1.5}</style></head><body><h1>COMBUSTÍVEL 360</h1><p>Monte do Pasto · Relatório de combustível<br>Período: '+escape_(r.filters.start||'Início')+' a '+escape_(r.filters.end||'Hoje')+'<br>Emitido: '+escape_(Utilities.formatDate(new Date(r.issuedAt),'Europe/Lisbon','dd/MM/yyyy HH:mm'))+' · Filtros: '+escape_(JSON.stringify(r.filters))+'</p><h2>Resumo executivo</h2><p>Consumo: '+s.litres.toFixed(3)+' L · '+s.count+' abastecimentos<br>Entradas: '+s.received.toFixed(3)+' L · Aquisição: '+s.purchase.toFixed(2)+' €<br>Custo estimado de consumo: '+(s.consumptionCost==null?'Incompleto — custo inicial desconhecido':s.consumptionCost.toFixed(2)+' €')+'</p>'+['stock','vehicles','users','months','years'].map(key=>'<h2>'+({stock:'Balanço por depósito',vehicles:'Consumo por veículo',users:'Registos por colaborador',months:'Evolução mensal',years:'Consumo anual'})[key]+'</h2>'+objectTable_(r[key])).join('')+(r.comparison?'<h2>Comparação com período anterior</h2><p>'+escape_(r.comparison.start+' a '+r.comparison.end+': '+r.comparison.litres+' L; variação '+(r.comparison.changePercent==null?'sem base':r.comparison.changePercent.toFixed(1)+'%'))+'</p>':'')+(extra||'')+'<h2>Movimentos efetivos (valores corrigidos)</h2><table>'+reportTable_(r).map((line,i)=>'<tr>'+line.map(c=>'<'+(i?'td':'th')+'>'+escape_(c)+'</'+(i?'td':'th')+'>').join('')+'</tr>').join('')+'</table><h2>Histórico conservado e acertos</h2>'+objectTable_(r.history.map(m=>({data:dateKey_(m.at),tipo:m.kind,deposito:m.tankName,litros:m.delta/1000,motivo:m.reason||'',referencia:m.root||m.id})))+'<p>Custos médios ponderados por depósito. As correções reexpressam o histórico; os movimentos originais continuam conservados. Os balanços completos por depósito requerem ausência de filtros por matrícula, tipo e utilizador.</p></body></html>';}
