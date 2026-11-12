@@ -1,4 +1,4 @@
-import {Api} from './api.js';
+import {Api} from './api.js?v=envio1';
 import {attachPhotos,photoFields,photoReview,receiptFields} from './photo-readings.js?v=guia1';
 const $=s=>document.querySelector(s), C=window.C360_CONFIG, api=new Api(C.apiUrl);
 let externalData=null,externalFilters={start:todayMonth(),end:''};
@@ -17,8 +17,46 @@ const litres=(name='litres',value='')=>field('Litros',name,'number',value,'min="
 const activeField=(value=true)=>select('Estado','active',[{id:'true',name:'Ativo'},{id:'false',name:'Inativo'}],String(value));
 const table=(heads,rows)=>rows.length?`<div class="table-wrap"><table><thead><tr>${heads.map(h=>`<th>${esc(h)}</th>`).join('')}</tr></thead><tbody>${rows.map(row=>`<tr>${row.map(v=>`<td>${v}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`:'<p class="empty">Sem registos para apresentar.</p>';
 const metric=(label,value)=>`<div class="card"><span class="label">${esc(label)}</span><div class="metric">${value}</div></div>`;
-function bindForm(id,handler){const f=$(id);f?.addEventListener('submit',async e=>{e.preventDefault();if(!f.reportValidity())return;const b=f.querySelector('button[type="submit"]');b.disabled=true;notice('');try{await handler(Object.fromEntries(new FormData(f)));}catch(err){notice(err.message,true);renderRecovery();}finally{if(b.isConnected)b.disabled=!navigator.onLine;}});}
-function network(){ $('#network').hidden=navigator.onLine;document.querySelectorAll('button[type="submit"]').forEach(b=>b.disabled=!navigator.onLine); }
+function bindForm(id,handler){
+ const form=$(id);
+ form?.addEventListener('submit',async event=>{
+  event.preventDefault();
+  const submit=form.querySelector('button[type="submit"]');
+  if(submit.disabled||form.dataset.submitting||!form.reportValidity())return;
+  form.querySelector('[data-submit-status]')?.remove();
+  form.querySelector('[data-recovery-link]')?.remove();
+  const label=submit.textContent;
+  const status=document.createElement('p');
+  status.setAttribute('role','status');
+  submit.after(status);
+  form.dataset.submitting='true';
+  submit.disabled=true;
+  submit.textContent='A aguardar confirmação…';
+  notice('');
+  try{
+   await handler(Object.fromEntries(new FormData(form)));
+  }catch(err){
+   notice(err.message,true);
+   status.textContent=err.message;
+   renderRecovery();
+   const retry=$('#retry button');
+   if(pendingOperation&&retry&&!form.contains(retry)){
+    const link=document.createElement('button');
+    link.type='button';
+    link.textContent='Ir para confirmação do envio';
+    link.onclick=()=>{retry.scrollIntoView({block:'center'});retry.focus({preventScroll:true});};
+    status.after(link);
+    link.dataset.recoveryLink='';
+   }
+  }finally{
+   delete form.dataset.submitting;
+   if(submit.isConnected){submit.disabled=!navigator.onLine;submit.textContent=label;}
+   if(!status.textContent)status.remove();
+   else status.dataset.submitStatus='';
+  }
+ });
+}
+function network(){ $('#network').hidden=navigator.onLine;document.querySelectorAll('button[type="submit"]').forEach(b=>b.disabled=!navigator.onLine||!!b.form?.dataset.submitting); }
 window.addEventListener('online',network);window.addEventListener('offline',network);
 if(C.logoUrl){$('#logo').src=C.logoUrl;$('#logo').hidden=false;}
 $('#clock').textContent=new Intl.DateTimeFormat('pt-PT',{dateStyle:'medium',timeZone:'Europe/Lisbon'}).format(new Date());
