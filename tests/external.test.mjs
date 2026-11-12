@@ -66,3 +66,18 @@ test('overview combines effective external fuel with internal consumption withou
   assert.equal(after.kpi.stock,before.kpi.stock);
   assert.equal(JSON.stringify(after.forecasts),JSON.stringify(before.forecasts));
 });
+
+test('fleet groups historic internal and external fuel by normalized plate and model',()=>{
+ const h=harness();
+ const data=h.ctx.consumptionOverview_(
+  [{kind:'SAIDA',at:'2024-01-15T12:00:00Z',plate:'AA-00-AA',vehicleId:'original',delta:-20000}],
+  {rows:[{date:'2024-01-16',plate:'AA00AA',vehicleId:'external',litresMl:30000},{date:'2024-01-16',plate:'AA00AA'}]},
+  '2024-01-31',[{id:'registered',plate:'AA-00-AA',brand:'Ford',model:'Ranger'}]);
+ const january=data.fleetMonths[0];
+ assert.equal(january.vehicles.length,1);
+ assert.equal(january.vehicles[0].litres,50);
+ assert.equal(january.vehicles[0].average,25);
+ assert.equal(january.models[0].name,'Ford Ranger');
+ assert.equal(january.models[0].count,2);
+ assert.equal(data.missingMonth,1);
+});
