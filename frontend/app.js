@@ -84,9 +84,20 @@ function renderAnalysis(){
  <div class="grid kpis">${metric('TOTAL REGISTADO',fmt(c.month,3)+' L')}${metric('INTERNOS',fmt(c.internalMonth,3)+' L')}${metric('EXTERNOS',fmt(c.externalMonth,3)+' L')}</div>
  ${c.missingMonth?`<p class="hint">Registos externos sem quantidade este mês: ${c.missingMonth}.</p>`:''}
  ${c.externalChecks.length?`<h3>Possíveis repetições nos externos</h3><ul>${c.externalChecks.map(row=>`<li>${esc(date(row.date))} · ${esc(row.vehicle)}</li>`).join('')}</ul>`:''}
- </section>${fleetAnalysis(c.fleetMonths||[])}<div class="grid tanks">${overview.forecasts.map(f=>{const t=overview.tanks.find(t=>t.id===f.tankId);return `<article class="card"><span class="eyebrow">PREVISÃO DE REPOSIÇÃO</span><h2>${esc(t.name)}</h2><span class="badge">Confiança ${esc(f.confidence)}</span><div class="metric">${date(f.orderDate)}</div><p class="muted">Data recomendada de encomenda</p><div class="tank-stats"><div><small>Quantidade recomendada</small><strong>${fmt(f.quantity)} L</strong></div><div><small>Autonomia até mínimo</small><strong>${fmt(f.toMinimum)} dias</strong></div><div><small>Média dos últimos 7 dias</small><strong>${fmt(f.avg7)} L/dia</strong></div><div><small>Média dos últimos 30 dias</small><strong>${fmt(f.avg30)} L/dia</strong></div></div><p class="hint">${esc(f.note)}</p></article>`;}).join('')}</div><section class="card"><h2>Consumos a verificar</h2><p class="muted">Sinais nos abastecimentos internos que requerem contexto operacional.</p><div class="list">${overview.anomalies.length?overview.anomalies.map(a=>`<p>${esc(a.text)} <small>Referência: ${esc(a.confidence)}</small></p>`).join(''):'<p class="empty">Sem sinais detetados com os dados disponíveis.</p>'}</div></section>`;
+ </section>${dailyFuelForecast(c.dailyEstimates||[])}${fleetAnalysis(c.fleetMonths||[])}<div class="grid tanks">${overview.forecasts.map(f=>{const t=overview.tanks.find(t=>t.id===f.tankId);return `<article class="card"><span class="eyebrow">PREVISÃO DE REPOSIÇÃO</span><h2>${esc(t.name)}</h2><span class="badge">Confiança ${esc(f.confidence)}</span><div class="metric">${date(f.orderDate)}</div><p class="muted">Data recomendada de encomenda</p><div class="tank-stats"><div><small>Quantidade recomendada</small><strong>${fmt(f.quantity)} L</strong></div><div><small>Autonomia até mínimo</small><strong>${fmt(f.toMinimum)} dias</strong></div><div><small>Média dos últimos 7 dias</small><strong>${fmt(f.avg7)} L/dia</strong></div><div><small>Média dos últimos 30 dias</small><strong>${fmt(f.avg30)} L/dia</strong></div></div><p class="hint">${esc(f.note)}</p></article>`;}).join('')}</div><section class="card"><h2>Consumos a verificar</h2><p class="muted">Sinais nos abastecimentos internos que requerem contexto operacional.</p><div class="list">${overview.anomalies.length?overview.anomalies.map(a=>`<p>${esc(a.text)} <small>Referência: ${esc(a.confidence)}</small></p>`).join(''):'<p class="empty">Sem sinais detetados com os dados disponíveis.</p>'}</div></section>`;
  const picker=$('#fleetPeriod');
  if(picker){const draw=()=>$('#fleetDetail').innerHTML=fleetTables(c.fleetMonths.find(row=>row.month===picker.value));picker.addEventListener('change',draw);draw();}
+}
+function dailyFuelForecast(rows){
+ const estimated=rows.filter(row=>row.estimate!=null);
+ const daily=estimated.reduce((sum,row)=>sum+row.estimate,0);
+ return `<section class="card section-gap"><h2>Estimativa de litros por dia</h2>
+ <p class="hint">Últimos 30 dias e hoje. A estimativa usa os litros abastecidos após o primeiro dia com registo, divididos pelos dias até ao último abastecimento. Inclui abastecimentos internos e externos e pode variar conforme o nível do depósito da viatura.</p>
+ ${estimated.length?`<p><strong>${fmt(daily,1)} L/dia</strong> para ${estimated.length} de ${rows.length} viaturas com abastecimentos registados.</p>`:''}
+ ${rows.length?table(['Viatura','Dias entre abastecimentos','Estimativa L/dia'],rows.map(row=>[
+  esc(row.name),row.span,row.estimate==null?'Histórico insuficiente':fmt(row.estimate,1)+(row.dates<3||row.span<7?' (provisória)':'')
+ ])):'<p class="empty">Sem abastecimentos recentes com quantidade registada.</p>'}
+ </section>`;
 }
 function fleetAnalysis(periods){
  const months=[...new Set([today().slice(0,7),...periods.map(row=>row.month)])];

@@ -16,7 +16,10 @@ function consumptionOverview_(records, external, today, fleet=[]){
  const month=today.slice(0,7);
  const fleetByPlate=new Map(fleet.filter(v=>v.plate).map(v=>[plate_(v.plate).replace(/-/g,''),v]));
  const fleetById=new Map(fleet.map(v=>[v.id,v]));
- const vehicleMonths=new Map(), modelMonths=new Map();
+ const vehicleMonths=new Map(), modelMonths=new Map(), recentVehicles=new Map();
+ const cutoff=new Date(today+'T12:00:00Z');
+ cutoff.setUTCDate(cutoff.getUTCDate()-30);
+ const recentStart=cutoff.toISOString().slice(0,10);
  function addPeriod(map, period, key, name, quantity, vehicle){
   if(!map.has(period))map.set(period,new Map());
   const group=map.get(period);
@@ -37,6 +40,11 @@ function consumptionOverview_(records, external, today, fleet=[]){
   const vehicleKey=record.plate?'plate:'+plate_(record.plate).replace(/-/g,''):record.vehicleId||vehicleLabel_(record);
   add(vehicles,vehicleKey,source,quantity,vehicleLabel_(record));
   const vehicle=record.plate?fleetByPlate.get(plate_(record.plate).replace(/-/g,''))||fleetById.get(record.vehicleId):fleetById.get(record.vehicleId);
+  if(day>=recentStart){
+   const recent=recentVehicles.get(vehicleKey)||{name:vehicleLabel_(record),days:new Map()};
+   recent.days.set(day,(recent.days.get(day)||0)+quantity);
+   recentVehicles.set(vehicleKey,recent);
+  }
   const period=day.slice(0,7);
   addPeriod(vehicleMonths,period,vehicleKey,vehicleLabel_(record),quantity,vehicle);
   if(vehicle?.brand&&vehicle?.model){
@@ -51,7 +59,14 @@ function consumptionOverview_(records, external, today, fleet=[]){
   }else addFuel(row,row.date,'external',row.litresMl);
  }
  const litres=map=>Array.from(map.values(),row=>({...row,internal:row.internal/1000,external:row.external/1000,total:(row.internal+row.external)/1000}));
+ const dailyEstimates=Array.from(recentVehicles.values(),vehicle=>{
+  const dates=Array.from(vehicle.days.keys()).sort();
+  const span=(Date.parse(dates.at(-1))-Date.parse(dates[0]))/86400000;
+  const litres=dates.slice(1).reduce((sum,date)=>sum+vehicle.days.get(date),0)/1000;
+  return {name:vehicle.name,span,dates:dates.length,estimate:span>=3?litres/span:null};
+ }).sort((a,b)=>(b.estimate??-1)-(a.estimate??-1));
  return {
+  dailyEstimates,
   today:(sources.internal.today+sources.external.today)/1000,
   month:(sources.internal.month+sources.external.month)/1000,
   internalMonth:sources.internal.month/1000,externalMonth:sources.external.month/1000,

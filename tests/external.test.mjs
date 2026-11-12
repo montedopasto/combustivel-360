@@ -81,3 +81,15 @@ test('fleet groups historic internal and external fuel by normalized plate and m
  assert.equal(january.models[0].count,2);
  assert.equal(data.missingMonth,1);
 });
+
+test('daily estimate excludes the opening fill and needs a spread of at least three days',()=>{
+ const h=harness();
+ const rows=[
+  {date:'2024-01-05',plate:'AA00AA',litresMl:90000},
+  {date:'2024-01-10',plate:'AA00AA',litresMl:30000},
+  {date:'2024-01-11',plate:'BB00BB',litresMl:50000}
+ ];
+ const result=h.ctx.consumptionOverview_([],{rows},'2024-01-12');
+ assert.equal(result.dailyEstimates[0].estimate,6);
+ assert.equal(result.dailyEstimates[1].estimate,null);
+});
