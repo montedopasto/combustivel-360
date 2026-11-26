@@ -8,11 +8,14 @@ function doPost(e){
  return HtmlService.createHtmlOutput(html).setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
 }
 function rate_(key,max,seconds){const store=props_();const now=Date.now();let buckets=JSON.parse(store.getProperty('RATE_LIMITS')||'{}');Object.keys(buckets).forEach(k=>{if(buckets[k].until<=now)delete buckets[k];});const item=buckets[key]||{count:0,until:now+seconds*1000};assert_(item.count<max,'Demasiadas tentativas. Aguarde alguns minutos.');assert_(Object.keys(buckets).length<120||buckets[key],'Demasiadas tentativas. Aguarde alguns minutos.');item.count++;buckets[key]=item;store.setProperty('RATE_LIMITS',JSON.stringify(buckets));}
-function login_(p){return lock_(()=>{rate_('global',100,600);rate_(hex_(sha_(bytes_(String(p.pin||'')))).slice(0,20),5,600);const pin=text_(p.pin,6);assert_(/^\d{4,6}$/.test(pin),'O PIN deve ter entre 4 e 6 números.');const u=rows_('UTILIZADORES').find(x=>x.active&&equal_(x.pin.index,indexPin_(pin)));assert_(u&&checkPin_(pin,u),'PIN inválido ou utilizador inativo.');const token=random_();CacheService.getScriptCache().put('session:'+hex_(sha_(bytes_(token))),JSON.stringify({id:u.id,version:u.pin.hash,expires:Date.now()+3600000}),3600);return {token,user:{id:u.id,name:u.name,role:u.role},expires:Date.now()+3600000};});}
+function login_(p){return lock_(()=>{rate_('global',100,600);rate_(hex_(sha_(bytes_(String(p.pin||'')))).slice(0,20),5,600);const pin=text_(p.pin,6);assert_(/^\d{4,6}$/.test(pin),'O PIN deve ter entre 4 e 6 números.');const u=rows_('UTILIZADORES').find(x=>x.active&&equal_(x.pin.index,indexPin_(pin)));assert_(u&&checkPin_(pin,u),'PIN inválido ou utilizador inativo.');const token=random_();CacheService.getScriptCache().put('session:'+hex_(sha_(bytes_(token))),JSON.stringify({id:u.id,version:u.pin.hash,expires:Date.now()+3600000}),3600);return {token,user:publicUser_(u),expires:Date.now()+3600000};});}
 function session_(token){assert_(typeof token==='string'&&/^[a-f0-9]{64}$/.test(token),'Sessão inválida. Entre novamente.');const s=CacheService.getScriptCache().get('session:'+hex_(sha_(bytes_(token))));assert_(s,'Sessão expirada. Entre novamente.');const auth=JSON.parse(s);const u=rows_('UTILIZADORES').find(x=>x.id===auth.id&&x.active);assert_(u&&equal_(auth.version,u.pin.hash)&&auth.expires>Date.now(),'Sessão expirada ou utilizador desativado.');return u;}
 function manage_(u){assert_(['Administrador','Responsável'].includes(u.role),'Acesso não autorizado.');}
 function admin_(u){assert_(u.role==='Administrador','Acesso não autorizado.');rate_('admin:'+u.id,10,600);}
-function publicUser_(u){return {id:u.id,name:u.name,role:u.role,active:u.active,at:u.at};}
+function externalOwnerId_(){return props_().getProperty('EXTERNAL_USER_ID');}
+function canUseExternal_(u){return !!u&&u.id===externalOwnerId_();}
+function requireExternal_(u){assert_(canUseExternal_(u),'Acesso não autorizado aos abastecimentos externos.');}
+function publicUser_(u){return {id:u.id,name:u.name,role:u.role,active:u.active,at:u.at,canExternal:canUseExternal_(u)};}
 function dispatch_(p){
  assert_(p&&typeof p==='object','Pedido inválido.');
  if(p.action==='login')return login_(p);
@@ -21,13 +24,14 @@ function dispatch_(p){
  if(p.action==='logout'){CacheService.getScriptCache().remove('session:'+hex_(sha_(bytes_(p.token))));return true;}
  if(p.action==='catalog')return {tanks:rows_('DEPOSITOS').filter(t=>t.active).map(t=>({id:t.id,name:t.name})),vehicles:rows_('VEICULOS').filter(v=>v.active).map(v=>({id:v.id,plate:v.plate,description:v.description}))};
  if(p.action==='movement')return movement_(u,p);
+ if(['externalRegister','externalEdit','externalCancel','externalReport','externalExport'].includes(p.action))requireExternal_(u);
  if(p.action==='externalRegister')return externalWrite_(p,false);
  if(p.action==='externalEdit')return externalWrite_(p,false,true);
  if(p.action==='externalCancel')return externalWrite_(p,true);
  manage_(u);
  if(p.action==='externalReport')return externalReport_(p.filters);
  if(p.action==='externalExport')return externalExport_(p.filters,p.format);
- if(p.action==='overview')return overview_(p.filters);
+ if(p.action==='overview')return overview_(p.filters,canUseExternal_(u));
  if(p.action==='report')return report_(p.filters);
  if(p.action==='export')return export_(p.filters,p.format);
  if(p.action==='vehicleLookup'){assert_(u.role==='Administrador','Acesso não autorizado.');return vehicleLookup_(p.plate);}
@@ -73,7 +77,7 @@ function save_(u,p){return lock_(()=>{u=session_(p.token);admin_(u,p);const d=p.
  fail_('Configuração inválida.');});}
 function movement_(u,p){return lock_(()=>{
  /* Re-read the session after acquiring the lock, including deactivation/role changes. */
- u=session_(p.token);assert_(/^[a-f0-9-]{32,64}$/.test(p.operationId||''),'Identificador de operação inválido.');
+ u=session_(p.token);if(u.role==='Responsável')assert_(['SAIDA','ENTRADA'].includes(p.kind),'Acesso não autorizado.');assert_(/^[a-f0-9-]{32,64}$/.test(p.operationId||''),'Identificador de operação inválido.');
  const fingerprint=hex_(sha_(bytes_(JSON.stringify({kind:p.kind,tankId:p.tankId,vehicleId:p.vehicleId,litres:p.litres,price:p.price,supplier:p.supplier,deliveryDate:p.deliveryDate,measured:p.measured,expectedStock:p.expectedStock,reason:p.reason,root:p.root,plate:p.plate,vehicleIdentification:p.vehicleIdentification}))));
  const ledger=rows_('MOVIMENTOS');const previous=ledger.find(m=>m.id===p.operationId);if(previous){assert_(previous.userId===u.id&&previous.fingerprint===fingerprint,'Identificador já utilizado para outra operação.');try{projectMovement_(previous);balances_(rows_('DEPOSITOS'),ledger).forEach(t=>put_('DEPOSITOS',t));}catch(err){console.error('Projeções pendentes.');}return {id:previous.id,message:'Operação já registada com sucesso.'};}
  const kind=p.kind;assert_(['SAIDA','ENTRADA','ACERTO','CORRECAO','ANULACAO'].includes(kind),'Tipo inválido.');if(kind!=='SAIDA')manage_(u);if(['CORRECAO','ANULACAO'].includes(kind))admin_(u,p);
