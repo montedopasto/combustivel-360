@@ -3,7 +3,11 @@ function fail_(message) { const error=new Error(message);error.definitive=true;t
 function assert_(value, message) { if (!value) fail_(message); }
 function text_(v, max) { const s = String(v == null ? '' : v).trim(); assert_(s.length <= (max || 200), 'Texto demasiado longo.'); return s; }
 function amount_(v, zero) { assert_(typeof v === 'number' && Number.isFinite(v) && Math.abs(v) <= 10000000, 'Quantidade inválida.'); const n = Math.round(v * 1000); assert_(Math.abs(v * 1000 - n) < 0.00001 && (zero ? n >= 0 : n > 0), 'Use litros positivos com até três casas decimais.'); return n; }
-function plate_(v) { return text_(v, 24).toUpperCase().replace(/\s/g, ''); }
+function plate_(v) {
+ const value=text_(v,24).toUpperCase().replace(/\s/g,'');
+ const compact=value.replace(/-/g,'');
+ return /^[A-Z0-9]{6}$/.test(compact)?compact.match(/.{2}/g).join('-'):value;
+}
 function dateKey_(v) { return Utilities.formatDate(new Date(v), 'Europe/Lisbon', 'yyyy-MM-dd'); }
 function dateInput_(v) { const s = text_(v, 10); assert_(/^\d{4}-\d{2}-\d{2}$/.test(s) && !isNaN(Date.parse(s)) && new Date(s).toISOString().slice(0,10) === s, 'Data inválida.'); return s; }
 function roundMoney_(v) { return Math.round((v + Number.EPSILON) * 100) / 100; }
