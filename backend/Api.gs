@@ -34,6 +34,7 @@ function dispatch_(p){
  if(p.action==='overview')return overview_(p.filters,canUseExternal_(u));
  if(p.action==='report')return report_(p.filters);
  if(p.action==='export')return export_(p.filters,p.format);
+ if(p.action==='generatePin'){assert_(u.role==='Administrador','Acesso não autorizado.');return availablePin_();}
  if(p.action==='vehicleLookup'){assert_(u.role==='Administrador','Acesso não autorizado.');return vehicleLookup_(p.plate);}
  if(p.action==='adminData'){assert_(u.role==='Administrador','Acesso não autorizado.');return {tanks:tanks_(),vehicles:rows_('VEICULOS'),users:rows_('UTILIZADORES').map(publicUser_),config:config_()};}
  if(p.action==='save')return save_(u,p);
@@ -69,9 +70,19 @@ function vehicleLookup_(value){
  return {brand,model};
 }
 
+function availablePin_(){
+ const used=new Set(rows_('UTILIZADORES').map(user=>user.pin.index));
+ assert_(used.size<10000,'Não existem PINs de quatro números disponíveis.');
+ const start=parseInt(random_().slice(0,8),16)%10000;
+ for(let offset=0;offset<10000;offset++){
+  const pin=String((start+offset)%10000).padStart(4,'0');
+  if(!used.has(indexPin_(pin)))return {pin};
+ }
+ fail_('Não foi possível gerar um PIN disponível.');
+}
 function save_(u,p){return lock_(()=>{u=session_(p.token);admin_(u,p);const d=p.data||{};
  if(p.entity==='vehicle'){const vs=rows_('VEICULOS');const old=vs.find(v=>v.id===d.id);const plate=plate_(d.plate);const description=text_(d.description,120).replace(/\s+/g,' ');assert_(!plate||/^[A-Z0-9-]+$/.test(plate),'Matrícula inválida.');assert_(plate||description.length>=3,'Identificação obrigatória para veículos sem matrícula.');assert_(!vs.some(v=>v.id!==d.id&&(plate?plate_(v.plate).replace(/-/g,'')===plate.replace(/-/g,''):!v.plate&&String(v.description).toUpperCase()===description.toUpperCase())),'Veículo já existente.');const o={id:old?old.id:random_(),plate,description,equipment:d.equipment===true,brand:text_(d.brand??old?.brand,60),model:text_(d.model??old?.model,80),active:d.active!==false,at:old?old.at:new Date().toISOString()};put_('VEICULOS',o);return o;}
- if(p.entity==='user'){const us=rows_('UTILIZADORES');const old=us.find(x=>x.id===d.id);assert_(['Administrador','Responsável','Colaborador'].includes(d.role),'Perfil inválido.');assert_(text_(d.name,120),'Nome obrigatório.');if(old&&old.role==='Administrador'&&(d.role!=='Administrador'||d.active===false))assert_(us.some(x=>x.id!==old.id&&x.active&&x.role==='Administrador'),'Mantenha um administrador ativo.');let pin=old?old.pin:null;if(d.pin){assert_(!us.some(x=>x.id!==d.id&&equal_(x.pin.index,indexPin_(String(d.pin)))),'PIN já atribuído.');pin=protectPin_(String(d.pin));}assert_(pin,'PIN obrigatório.');const o={id:old?old.id:random_(),name:d.name,role:d.role,active:d.active!==false,pin,at:old?old.at:new Date().toISOString()};put_('UTILIZADORES',o);return publicUser_(o);}
+ if(p.entity==='user'){const us=rows_('UTILIZADORES');const old=us.find(x=>x.id===d.id);assert_(['Administrador','Responsável','Colaborador'].includes(d.role),'Perfil inválido.');assert_(text_(d.name,120),'Nome obrigatório.');if(old&&old.role==='Administrador'&&(d.role!=='Administrador'||d.active===false))assert_(us.some(x=>x.id!==old.id&&x.active&&x.role==='Administrador'),'Mantenha um administrador ativo.');let pin=old?old.pin:null;if(d.pin){assert_(/^\d{4}$/.test(String(d.pin)),'O novo PIN deve ter exatamente 4 números.');assert_(!us.some(x=>x.id!==d.id&&equal_(x.pin.index,indexPin_(String(d.pin)))),'PIN já atribuído.');pin=protectPin_(String(d.pin));}assert_(pin,'PIN obrigatório.');const o={id:old?old.id:random_(),name:d.name,role:d.role,active:d.active!==false,pin,at:old?old.at:new Date().toISOString()};put_('UTILIZADORES',o);return publicUser_(o);}
  if(p.entity==='tank'){const old=tanks_().find(t=>t.id===d.id);assert_(old,'Depósito inexistente.');const o=tankInput_(d,old);assert_(o.name,'Nome obrigatório.');put_('DEPOSITOS',o);reconcile_();return true;}
  if(p.entity==='config'){assert_(Number.isFinite(d.safetyDays)&&d.safetyDays>=0&&d.safetyDays<=30,'Margem entre 0 e 30 dias.');assert_(Array.isArray(d.emails)&&d.emails.length<=10&&d.emails.every(x=>/^[^\s@,;]+@[^\s@,;]+\.[^\s@,;]+$/.test(x)),'Destinatários inválidos.');put_('CONFIGURACOES',{id:'geral',safetyDays:d.safetyDays,emails:d.emails,alerts:d.alerts!==false,leadDays:5});return true;}
  fail_('Configuração inválida.');});}
