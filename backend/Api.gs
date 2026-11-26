@@ -22,7 +22,7 @@ function dispatch_(p){
  if(p.action==='bootstrap')return bootstrap_(p);
  const u=session_(p.token);
  if(p.action==='logout'){CacheService.getScriptCache().remove('session:'+hex_(sha_(bytes_(p.token))));return true;}
- if(p.action==='catalog')return {tanks:rows_('DEPOSITOS').filter(t=>t.active).map(t=>({id:t.id,name:t.name})),vehicles:rows_('VEICULOS').filter(v=>v.active).map(v=>({id:v.id,plate:v.plate,description:v.description}))};
+ if(p.action==='catalog')return {tanks:rows_('DEPOSITOS').filter(t=>t.active).map(t=>({id:t.id,name:t.name})),vehicles:rows_('VEICULOS').filter(v=>v.active).map(v=>({id:v.id,plate:v.plate,description:v.description,equipment:v.equipment===true}))};
  if(p.action==='movement')return movement_(u,p);
  if(['externalRegister','externalEdit','externalCancel','externalReport','externalExport'].includes(p.action))requireExternal_(u);
  if(p.action==='externalRegister')return externalWrite_(p,false);
@@ -70,7 +70,7 @@ function vehicleLookup_(value){
 }
 
 function save_(u,p){return lock_(()=>{u=session_(p.token);admin_(u,p);const d=p.data||{};
- if(p.entity==='vehicle'){const vs=rows_('VEICULOS');const old=vs.find(v=>v.id===d.id);const plate=plate_(d.plate);const description=text_(d.description,120).replace(/\s+/g,' ');assert_(!plate||/^[A-Z0-9-]+$/.test(plate),'Matrícula inválida.');assert_(plate||description.length>=3,'Identificação obrigatória para veículos sem matrícula.');assert_(!vs.some(v=>v.id!==d.id&&(plate?plate_(v.plate).replace(/-/g,'')===plate.replace(/-/g,''):!v.plate&&String(v.description).toUpperCase()===description.toUpperCase())),'Veículo já existente.');const o={id:old?old.id:random_(),plate,description,brand:text_(d.brand??old?.brand,60),model:text_(d.model??old?.model,80),active:d.active!==false,at:old?old.at:new Date().toISOString()};put_('VEICULOS',o);return o;}
+ if(p.entity==='vehicle'){const vs=rows_('VEICULOS');const old=vs.find(v=>v.id===d.id);const plate=plate_(d.plate);const description=text_(d.description,120).replace(/\s+/g,' ');assert_(!plate||/^[A-Z0-9-]+$/.test(plate),'Matrícula inválida.');assert_(plate||description.length>=3,'Identificação obrigatória para veículos sem matrícula.');assert_(!vs.some(v=>v.id!==d.id&&(plate?plate_(v.plate).replace(/-/g,'')===plate.replace(/-/g,''):!v.plate&&String(v.description).toUpperCase()===description.toUpperCase())),'Veículo já existente.');const o={id:old?old.id:random_(),plate,description,equipment:d.equipment===true,brand:text_(d.brand??old?.brand,60),model:text_(d.model??old?.model,80),active:d.active!==false,at:old?old.at:new Date().toISOString()};put_('VEICULOS',o);return o;}
  if(p.entity==='user'){const us=rows_('UTILIZADORES');const old=us.find(x=>x.id===d.id);assert_(['Administrador','Responsável','Colaborador'].includes(d.role),'Perfil inválido.');assert_(text_(d.name,120),'Nome obrigatório.');if(old&&old.role==='Administrador'&&(d.role!=='Administrador'||d.active===false))assert_(us.some(x=>x.id!==old.id&&x.active&&x.role==='Administrador'),'Mantenha um administrador ativo.');let pin=old?old.pin:null;if(d.pin){assert_(!us.some(x=>x.id!==d.id&&equal_(x.pin.index,indexPin_(String(d.pin)))),'PIN já atribuído.');pin=protectPin_(String(d.pin));}assert_(pin,'PIN obrigatório.');const o={id:old?old.id:random_(),name:d.name,role:d.role,active:d.active!==false,pin,at:old?old.at:new Date().toISOString()};put_('UTILIZADORES',o);return publicUser_(o);}
  if(p.entity==='tank'){const old=tanks_().find(t=>t.id===d.id);assert_(old,'Depósito inexistente.');const o=tankInput_(d,old);assert_(o.name,'Nome obrigatório.');put_('DEPOSITOS',o);reconcile_();return true;}
  if(p.entity==='config'){assert_(Number.isFinite(d.safetyDays)&&d.safetyDays>=0&&d.safetyDays<=30,'Margem entre 0 e 30 dias.');assert_(Array.isArray(d.emails)&&d.emails.length<=10&&d.emails.every(x=>/^[^\s@,;]+@[^\s@,;]+\.[^\s@,;]+$/.test(x)),'Destinatários inválidos.');put_('CONFIGURACOES',{id:'geral',safetyDays:d.safetyDays,emails:d.emails,alerts:d.alerts!==false,leadDays:5});return true;}
@@ -83,7 +83,10 @@ function movement_(u,p){return lock_(()=>{
  const kind=p.kind;assert_(['SAIDA','ENTRADA','ACERTO','CORRECAO','ANULACAO'].includes(kind),'Tipo inválido.');if(kind!=='SAIDA')manage_(u);if(['CORRECAO','ANULACAO'].includes(kind))admin_(u,p);
  const t=balances_(rows_('DEPOSITOS'),ledger).find(t=>t.id===p.tankId);assert_(t&&t.active,'Depósito indisponível.');
  const m={id:p.operationId,fingerprint,kind,tankId:t.id,tankName:t.name,at:new Date().toISOString(),userId:u.id,userName:u.name,before:t.stockMl};
- if(kind==='SAIDA'){Object.assign(m,vehicleIdentity_(p));m.delta=-amount_(p.litres);}
+ if(kind==='SAIDA'){
+ const equipment=rows_('VEICULOS').find(v=>v.id===p.vehicleId&&v.active&&v.equipment===true);
+ assert_(equipment&&!p.plate&&!p.vehicleIdentification,'Selecione um equipamento ativo da lista.');
+ Object.assign(m,vehicleIdentity_({vehicleId:equipment.id}));m.delta=-amount_(p.litres);}
  if(kind==='ENTRADA'){m.delta=amount_(p.litres);assert_(Number.isFinite(p.price)&&p.price>0&&p.price<100,'Preço por litro inválido.');m.priceMicro=Math.round(p.price*1e6);m.supplier=text_(p.supplier,120);assert_(m.supplier,'Fornecedor obrigatório.');m.deliveryDate=dateInput_(p.deliveryDate);assert_(m.deliveryDate<=dateKey_(m.at),'A entrega não pode ser futura.');}
  if(kind==='ACERTO'){m.measuredMl=amount_(p.measured,true);assert_(amount_(p.expectedStock,true)===t.stockMl,'O stock mudou. Atualize a consulta antes do acerto.');m.delta=m.measuredMl-t.stockMl;m.reason=text_(p.reason,500);assert_(m.reason,'Justificação obrigatória.');}
  if(kind==='CORRECAO'||kind==='ANULACAO'){
